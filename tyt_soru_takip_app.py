@@ -17,18 +17,20 @@ st.markdown("""
         background-color: #121212;
         color: white;
     }
-    .stDataFrame tbody td {
-        color: #eee !important;
+
+    /* DataFrame yazıları beyaz yap */
+    .stDataFrame * {
+        color: white !important;
     }
-    .stDataFrame thead th {
-        color: #ddd !important;
-    }
+
     div[data-testid="stMetricValue"] {
         color: white;
     }
+
     button:hover {
         transform: scale(1.03);
     }
+
     @media only screen and (max-width: 600px) {
         .stColumn {
             display: block !important;
@@ -115,7 +117,6 @@ if secenek == "Analiz":
             st.write(f"✅ Çözülen Ortalama Süre: **{sure_c:.2f} dk**")
             st.write(f"❌ Çözülemeyen Ortalama Süre: **{sure_y:.2f} dk**")
 
-            
             fig, ax = plt.subplots(facecolor="#121212")
             ax.bar(["Çözülen", "Çözülemeyen"], [sure_c, sure_y], color=["green", "red"])
             ax.set_ylabel("Ortalama Süre (dk)")
