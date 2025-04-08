@@ -7,15 +7,15 @@ import time
 # CSV dosyası
 CSV_FILE = "soru_kayitlari.csv"
 
-# Koyu tema uyarısı (Streamlit ayarlarında config.toml ile kontrol edilebilir)
+# Sayfa ayarı
 st.set_page_config(page_title="TYT Soru Takip", layout="wide", initial_sidebar_state="expanded")
 
-# Başlık ve açıklama
+# Başlık
 st.title("TYT Soru Takip ve Analiz Aracı")
 st.markdown("Konu bazlı soru çözüm ilerlemeni takip edebileceğin ve performansını analiz edebileceğin bir uygulama.")
 
 # Sayfa seçimi
-secenek = st.sidebar.radio("Sayfa Seç:", ["Soru Girişi", "Analiz"])
+secenek = st.sidebar.radio("Sayfa Seç:", ["Soru Girişi", "Analiz", "Kayıt Sil"])
 
 # Konular
 konular = [
@@ -27,7 +27,7 @@ konular = [
 
 ders = "Matematik"
 
-# Soru Girişi
+# ➕ Soru Girişi Sayfası
 if secenek == "Soru Girişi":
     st.header("Yeni Soru Kaydı Ekle")
 
@@ -65,7 +65,7 @@ if secenek == "Soru Girişi":
             time.sleep(0.5)
         st.success("Kayıt başarıyla eklendi!")
 
-# Analiz
+# 📊 Analiz Sayfası
 elif secenek == "Analiz":
     st.header("Çözülen Soruların Analizi")
 
@@ -85,7 +85,6 @@ elif secenek == "Analiz":
         cozememe = toplam_soru - cozulen
         ort_sure = df["Süre"].mean().round(2)
 
-        # Animasyonlu sayaçlar
         col1, col2, col3, col4 = st.columns(4)
         with col1:
             st.metric("Toplam Soru", toplam_soru)
@@ -102,6 +101,30 @@ elif secenek == "Analiz":
         konu_grup["Başarı %"] = (konu_grup.get("Çözüldü", 0) / konu_grup["Toplam"] * 100).round(1)
 
         st.dataframe(konu_grup.sort_values("Başarı %", ascending=False))
-
     else:
         st.warning("Henüz kayıt bulunmuyor. Önce soru girişi yapmalısın.")
+
+# 🗑️ Kayıt Sil Sayfası
+elif secenek == "Kayıt Sil":
+    st.header("Kayıt Silme Paneli")
+
+    if os.path.exists(CSV_FILE):
+        df = pd.read_csv(CSV_FILE)
+
+        if df.empty:
+            st.info("Kayıt dosyası boş. Silinecek kayıt yok.")
+        else:
+            df["Görüntü"] = df.apply(
+                lambda row: f"{row['Tarih']} | {row['Yıl']} | {row['Konu']} | Soru {int(row['Soru No'])}", axis=1)
+
+            secilen_kayit = st.selectbox("Silmek istediğin kaydı seç:", df["Görüntü"])
+
+            secilen_index = df[df["Görüntü"] == secilen_kayit].index[0]
+
+            if st.button("Kaydı Sil"):
+                df = df.drop(secilen_index)
+                df.to_csv(CSV_FILE, index=False)
+                st.success("Seçilen kayıt başarıyla silindi!")
+                st.experimental_rerun()
+    else:
+        st.warning("Kayıt dosyası bulunamadı.")
