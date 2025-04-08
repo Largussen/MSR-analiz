@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 CSV_FILE = "soru_kayitlari.csv"
 KONSOL_SIFRE = "1234"
 
-# 🎨 Sayfa ayarları
+# 🎨 Sayfa ayarları ve tema
 st.set_page_config(page_title="TYT Soru Takip", layout="wide", initial_sidebar_state="expanded")
 st.markdown("""
     <style>
@@ -17,20 +17,18 @@ st.markdown("""
         background-color: #121212;
         color: white;
     }
-
-    /* DataFrame yazıları beyaz yap */
-    .stDataFrame * {
+    .stDataFrame tbody td {
         color: white !important;
     }
-
+    .stDataFrame thead th {
+        color: white !important;
+    }
     div[data-testid="stMetricValue"] {
         color: white;
     }
-
     button:hover {
         transform: scale(1.03);
     }
-
     @media only screen and (max-width: 600px) {
         .stColumn {
             display: block !important;
@@ -119,7 +117,14 @@ if secenek == "Analiz":
 
             fig, ax = plt.subplots(facecolor="#121212")
             ax.bar(["Çözülen", "Çözülemeyen"], [sure_c, sure_y], color=["green", "red"])
-            ax.set_ylabel("Ortalama Süre (dk)")
+
+            ax.set_ylabel("Ortalama Süre (dk)", color="white")
+            ax.tick_params(axis='x', colors='white')
+            ax.tick_params(axis='y', colors='white')
+
+            for spine in ax.spines.values():
+                spine.set_color("white")
+
             ax.set_facecolor("#1E1E1E")
             fig.patch.set_facecolor("#121212")
             st.pyplot(fig)
