@@ -66,10 +66,77 @@ if secenek == "Konsol":
     else:
         st.warning("Konsola erişmek için doğru şifreyi girin.")
 
-# 🔎 Analiz kısmı (Kısaltıldı – önceki kodla aynı şekilde devam ediyor)
-# [Kodu sadeleştirdim ama analiz kısmında tüm özellikler korunmuş durumda.]
+# 📊 ANALİZ SAYFASI
+if secenek == "Analiz":
+    st.header("📈 Çözülen Soruların Analizi")
 
-# 🛠 Konsol Sayfası: Şifre doğruysa göster
+    if os.path.exists(CSV_FILE):
+        df = pd.read_csv(CSV_FILE)
+
+        if not df.empty:
+            st.subheader("🔍 Filtreleme")
+            dersler = ["Tümü"] + sorted(df["Ders"].unique())
+            secilen_ders = st.selectbox("Derse göre filtrele", dersler)
+
+            if secilen_ders != "Tümü":
+                df = df[df["Ders"] == secilen_ders]
+
+            yillar = ["Tümü"] + sorted(df["Yıl"].unique())
+            secilen_yil = st.selectbox("Yıla göre filtrele", yillar)
+
+            if secilen_yil != "Tümü":
+                df = df[df["Yıl"] == secilen_yil]
+
+            st.subheader("📌 Genel Bilgiler")
+            toplam_soru = len(df)
+            cozulen = len(df[df["Durum"] == "Çözüldü"])
+            cozememe = toplam_soru - cozulen
+            ort_sure = df["Süre"].mean().round(2)
+
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.metric("Toplam Soru", toplam_soru)
+            with col2:
+                st.metric("Çözülen", cozulen)
+            with col3:
+                st.metric("Çözülemeyen", cozememe)
+            with col4:
+                st.metric("Ortalama Süre", f"{ort_sure} dk")
+
+            st.subheader("📚 Konu Bazlı Başarı")
+            konu_grup = df.groupby("Konu")["Durum"].value_counts().unstack().fillna(0)
+            konu_grup["Toplam"] = konu_grup.sum(axis=1)
+            konu_grup["Başarı %"] = (konu_grup.get("Çözüldü", 0) / konu_grup["Toplam"] * 100).round(1)
+            st.dataframe(konu_grup.sort_values("Başarı %", ascending=False))
+
+            st.subheader("⏱️ Süre Analizi")
+            sure_c = df[df["Durum"] == "Çözüldü"]["Süre"].mean()
+            sure_y = df[df["Durum"] == "Çözülemeyen"]["Süre"].mean()
+            st.write(f"✅ Çözülen Ortalama Süre: **{sure_c:.2f} dk**")
+            st.write(f"❌ Çözülemeyen Ortalama Süre: **{sure_y:.2f} dk**")
+
+            st.subheader("📊 Süre Karşılaştırma Grafiği")
+            fig, ax = plt.subplots(facecolor="#121212")
+            ax.bar(["Çözülen", "Çözülemeyen"], [sure_c, sure_y], color=["green", "red"])
+            ax.set_ylabel("Ortalama Süre (dk)")
+            ax.set_facecolor("#1E1E1E")
+            fig.patch.set_facecolor("#121212")
+            st.pyplot(fig)
+
+            st.subheader("📌 Açıklamalı Sorular")
+            df["Açıklama"] = df["Açıklama"].astype(str)
+            aciklamalar = df[(df["Durum"] == "Çözülemeyen") & (df["Açıklama"].str.strip() != "")]
+            if not aciklamalar.empty:
+                for _, row in aciklamalar.iterrows():
+                    st.markdown(f"📌 **{row['Ders']} - {row['Konu']}** → {row['Açıklama']}")
+            else:
+                st.info("Açıklama girilmiş çözülemeyen soru bulunamadı.")
+        else:
+            st.info("Henüz kayıt yok.")
+    else:
+        st.warning("Veri dosyası bulunamadı.")
+
+# 🛠 Konsol Sayfası
 if secenek == "Konsol" and sifre_dogru:
     secim = st.radio("İşlem Seç:", ["Yeni Soru Ekle", "Kayıt Sil"])
 
