@@ -68,7 +68,7 @@ if secenek == "Konsol":
 
 # 📊 ANALİZ SAYFASI
 if secenek == "Analiz":
-    st.image("kemal.png", width=200)
+    st.image("kemal.png", width=500)
     st.header("")
 
     if os.path.exists(CSV_FILE):
