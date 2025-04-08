@@ -6,18 +6,16 @@ import time
 import matplotlib.pyplot as plt
 from PIL import Image
 
-# 🗂️ Ayarlar
+# ⛳️ Ayarlar
 CSV_FILE = "soru_kayitlari.csv"
 KONSOL_SIFRE = "1234"
 
-# 🎨 Tema ve stil
+# 🎨 Sayfa ayarları ve tema
 st.set_page_config(page_title="TYT Soru Takip", layout="wide", initial_sidebar_state="expanded")
 st.markdown("""
     <style>
     body { background-color: #121212; color: white; }
-    .stDataFrame tbody td { color: white !important; }
-    .stDataFrame thead th { color: white !important; }
-    div[data-testid="stMetricValue"] { color: white; }
+    .stDataFrame tbody td, .stDataFrame thead th, div[data-testid="stMetricValue"] { color: white !important; }
     button:hover { transform: scale(1.03); }
     @media only screen and (max-width: 600px) {
         .stColumn { display: block !important; width: 100% !important; }
@@ -25,7 +23,8 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 📚 Konular
+st.title("")
+
 konular_dict = {
     "Matematik": ["Temel Kavramlar", "Sayılar", "Bölme-Bölünebilme", "OBEB-OKEK", "Rasyonel Sayılar", "Ondalık Sayılar",
                   "Basamak Kavramı", "Faktöriyel", "Asal Çarpan", "Modüler Aritmetik", "EBOB-EKOK", "Çarpanlara Ayırma",
@@ -40,11 +39,10 @@ konular_dict = {
     "Din Kültürü": ["İslamiyet", "İnanç", "İbadet", "Ahlak", "Din ve Hayat"]
 }
 
-# 📋 Menü
-menu = ["Analiz", "Soru Notları", "Yıldızlı Sorular", "Konsol"]
+menu = ["Analiz", "İşaretli Sorular", "Soru Notları", "Konsol"]
 secenek = st.sidebar.radio("Menü:", menu)
 
-# 🔐 Şifre kontrolü
+# 🔐 Konsol Şifre Kontrolü
 sifre_dogru = False
 if secenek == "Konsol":
     girilen = st.text_input("Konsol Girişi - Şifre:", type="password")
@@ -53,9 +51,11 @@ if secenek == "Konsol":
     else:
         st.warning("Konsola erişmek için doğru şifreyi girin.")
 
-# 📊 ANALİZ
+# 📊 ANALİZ SAYFASI
 if secenek == "Analiz":
-    st.image(Image.open("kemal.png"), width=200)
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.image(Image.open("kemal.png"), width=200)
     st.header("")
 
     if os.path.exists(CSV_FILE):
@@ -65,33 +65,32 @@ if secenek == "Analiz":
             st.subheader("Filtreleme")
             dersler = ["Tümü"] + sorted(df["Ders"].unique())
             secilen_ders = st.selectbox("Derse göre filtrele", dersler)
-
             if secilen_ders != "Tümü":
                 df = df[df["Ders"] == secilen_ders]
-
-            zorluklar = ["Tümü", "0", "1", "2", "3", "4"]
-            sec_zorluk = st.selectbox("Zorluğa göre filtrele (0: Çok Kolay - 4: Çok Zor)", zorluklar)
-            if sec_zorluk != "Tümü":
-                df = df[df["Zorluk"] == int(sec_zorluk)]
 
             yillar = ["Tümü"] + sorted(df["Yıl"].unique())
             secilen_yil = st.selectbox("Yıla göre filtrele", yillar)
             if secilen_yil != "Tümü":
                 df = df[df["Yıl"] == secilen_yil]
 
+            zorluklar = ["Tümü"] + sorted(df["Zorluk"].dropna().unique())
+            secilen_zorluk = st.selectbox("Zorluğa göre filtrele", zorluklar)
+            if secilen_zorluk != "Tümü":
+                df = df[df["Zorluk"] == secilen_zorluk]
+
             st.subheader("Genel Bilgiler")
             toplam_soru = len(df)
             cozulen = len(df[df["Durum"] == "Çözüldü"])
             cozememe = toplam_soru - cozulen
             ort_sure = df["Süre"].mean().round(2)
-            ort_zorluk = df["Zorluk"].mean().round(2) if "Zorluk" in df.columns else "Yok"
+            ort_zorluk = df["Zorluk"].mean().round(2)
 
             col1, col2, col3, col4, col5 = st.columns(5)
-            col1.metric("Toplam Soru", toplam_soru)
-            col2.metric("Çözülen", cozulen)
-            col3.metric("Çözülemeyen", cozememe)
-            col4.metric("Ortalama Süre", f"{ort_sure} dk")
-            col5.metric("Ortalama Zorluk", ort_zorluk)
+            with col1: st.metric("Toplam Soru", toplam_soru)
+            with col2: st.metric("Çözülen", cozulen)
+            with col3: st.metric("Çözülemeyen", cozememe)
+            with col4: st.metric("Ortalama Süre", f"{ort_sure} dk")
+            with col5: st.metric("Ort. Zorluk", ort_zorluk)
 
             st.subheader("Konu Bazlı Başarı")
             konu_grup = df.groupby("Konu")["Durum"].value_counts().unstack().fillna(0)
@@ -110,8 +109,7 @@ if secenek == "Analiz":
             ax.set_ylabel("Ortalama Süre (dk)", color="white")
             ax.tick_params(axis='x', colors='white')
             ax.tick_params(axis='y', colors='white')
-            for spine in ax.spines.values():
-                spine.set_color("white")
+            for spine in ax.spines.values(): spine.set_color("white")
             ax.set_facecolor("#1E1E1E")
             fig.patch.set_facecolor("#121212")
             st.pyplot(fig)
@@ -120,66 +118,60 @@ if secenek == "Analiz":
     else:
         st.warning("Veri dosyası bulunamadı.")
 
-# 📘 SORU NOTLARI
-elif secenek == "Soru Notları":
-    st.header("📝 Soru Notları")
-    if os.path.exists(CSV_FILE):
-        df = pd.read_csv(CSV_FILE)
-        if not df.empty:
-            df["Açıklama"] = df["Açıklama"].astype(str)
-            aciklamalar = df[(df["Açıklama"].str.strip() != "")]
-            for _, row in aciklamalar.iterrows():
-                z = f" - Zorluk: {row['Zorluk']}" if "Zorluk" in row else ""
-                st.markdown(f"**{row['Ders']} - {row['Konu']} | {row['Yıl']} | Soru {int(row['Soru No'])}**{z} → {row['Açıklama']}")
-        else:
-            st.info("Hiç açıklama girilmemiş.")
-    else:
-        st.warning("Veri dosyası bulunamadı.")
-
-
+# ⭐️ İŞARETLİ SORULAR SAYFASI
 elif secenek == "İşaretli Sorular":
     st.header("İşaretli Sorular")
     if os.path.exists(CSV_FILE):
         df = pd.read_csv(CSV_FILE)
-        if "İşaretli" in df.columns or "Yıldızlı" in df.columns:
-            # "Yıldızlı" olarak kaydedildiyse onu "İşaretli" olarak kabul et
-            if "Yıldızlı" in df.columns and "İşaretli" not in df.columns:
-                df.rename(columns={"Yıldızlı": "İşaretli"}, inplace=True)
-
-            if True in df["İşaretli"].unique():
-                for ders in sorted(df["Ders"].unique()):
-                    alt_df = df[(df["Ders"] == ders) & (df["İşaretli"] == True)]
-                    if not alt_df.empty:
-                        st.subheader(ders)
-                        sorular = alt_df["Soru No"].tolist()
-                        st.write(f"İşaretli Sorular: {', '.join(map(str, sorular))}")
-            else:
-                st.info("Henüz işaretli soru bulunmuyor.")
+        if "Yıldızlı" in df.columns and True in df["Yıldızlı"].unique():
+            for ders in df["Ders"].unique():
+                alt_df = df[(df["Ders"] == ders) & (df["Yıldızlı"] == True)]
+                if not alt_df.empty:
+                    st.subheader(ders)
+                    sorular = alt_df["Soru No"].tolist()
+                    st.write(f"İşaretli Sorular: {', '.join(map(str, sorular))}")
         else:
-            st.info("Verilerde 'İşaretli' bilgisi yer almıyor.")
+            st.info("İşaretli soru bulunamadı.")
     else:
         st.warning("Veri dosyası bulunamadı.")
 
+# 📝 SORU NOTLARI SAYFASI
+elif secenek == "Soru Notları":
+    st.header("Detaylı Soru Notları")
+    if os.path.exists(CSV_FILE):
+        df = pd.read_csv(CSV_FILE)
+        df["Açıklama"] = df["Açıklama"].astype(str)
+        aciklamalar = df[(df["Açıklama"].str.strip() != "")]
+        if not aciklamalar.empty:
+            for _, row in aciklamalar.iterrows():
+                st.markdown(f"**{row['Ders']} - {row['Konu']}** → {row['Açıklama']}")
+        else:
+            st.info("Açıklama girilmiş soru bulunamadı.")
+    else:
+        st.warning("CSV dosyası bulunamadı.")
 
-# ⚙️ KONSOL
-if secenek == "Konsol" and sifre_dogru:
+# 🔧 KONSOL
+elif secenek == "Konsol" and sifre_dogru:
     secim = st.radio("İşlem Seç:", ["Yeni Soru Ekle", "Kayıt Sil"])
+
     if secim == "Yeni Soru Ekle":
         st.header("➕ Yeni Soru Kaydı Ekle")
         ders = st.selectbox("Ders", list(konular_dict.keys()))
         konu = st.selectbox("Konu", konular_dict[ders])
         col1, col2 = st.columns(2)
         with col1:
-            yil = st.selectbox("Yıl / Kaynak", ["2024", "2023", "2022", "2021"])
-            soru_no = st.number_input("Soru No", min_value=1, max_value=1000, step=1)
+            yil = st.selectbox("Yıl / Kaynak", ["2024", "2023", "2022", "2021", "2020"])
+            soru_no = st.number_input("Soru No", min_value=1, max_value=1000)
         with col2:
-            dak = st.number_input("Süre (Dakika)", min_value=0, step=1)
-            sn = st.number_input("Süre (Saniye)", min_value=0, max_value=59, step=1)
+            dak = st.number_input("Süre (Dakika)", min_value=0)
+            sn = st.number_input("Süre (Saniye)", min_value=0, max_value=59)
             sure = round(dak + sn / 60, 2)
+
         durum = st.radio("Durum", ["Çözüldü", "Çözülemeyen"])
-        zorluk = st.slider("Zorluk Seviyesi (0: Çok Kolay - 4: Çok Zor)", 0, 4, 2)
-        yildizli = st.checkbox("⭐ Soruyu yıldızla")
+        zorluk = st.slider("Zorluk Derecesi (0: Çok Kolay - 4: Çok Zor)", 0, 4, 2)
+        isaretli = st.checkbox("Bu soruyu işaretle")
         aciklama = st.text_area("Açıklama (isteğe bağlı)")
+
         if st.button("Kaydet"):
             yeni_kayit = pd.DataFrame({
                 "Tarih": [datetime.date.today()],
@@ -189,9 +181,9 @@ if secenek == "Konsol" and sifre_dogru:
                 "Konu": [konu],
                 "Süre": [sure],
                 "Durum": [durum],
-                "Açıklama": [aciklama],
                 "Zorluk": [zorluk],
-                "Yıldızlı": [yildizli]
+                "Yıldızlı": [isaretli],
+                "Açıklama": [aciklama]
             })
             if os.path.exists(CSV_FILE):
                 mevcut = pd.read_csv(CSV_FILE)
@@ -202,7 +194,7 @@ if secenek == "Konsol" and sifre_dogru:
             st.success("Kayıt başarıyla eklendi!")
 
     elif secim == "Kayıt Sil":
-        st.header("🗑️ Kayıt Sil")
+        st.header("🗑️ Kayıt Silme")
         if os.path.exists(CSV_FILE):
             df = pd.read_csv(CSV_FILE)
             if df.empty:
