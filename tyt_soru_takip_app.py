@@ -127,7 +127,7 @@ elif secenek == "Soru Ekle" and authorized:
     konu = st.selectbox("Konu", konular_dict[ders])
     col1, col2 = st.columns(2)
     yil = col1.selectbox("Yıl / Kaynak", ["2024", "2023", "2022", "2021", "2020"])
-    soru_no = col1.number_input("Soru No", min_value=1, max_value=50, step=1)
+    soru_no = col1.number_input("Soru No", min_value=1, max_value=5000, step=1)
     sure = col2.number_input("Süre (dakika)", min_value=0.0, step=0.1, format="%.1f")
     durum = col2.radio("Durum", ["Çözülen", "Çözülemeyen"])
     aciklama = st.text_area("Açıklama (isteğe bağlı)")
