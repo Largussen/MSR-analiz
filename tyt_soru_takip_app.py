@@ -5,177 +5,51 @@ import os
 import time
 import matplotlib.pyplot as plt
 
-# Sayfa ayarı
 st.set_page_config(page_title="TYT Soru Takip", layout="wide", initial_sidebar_state="expanded")
 
-# 🎨 Tema ve Stil
+# 💡 Özelleştirilmiş stil
 st.markdown("""
     <style>
-    body {
-        background-color: #0e1117;
-        color: white;
+    .stDataFrame thead tr th, .stDataFrame tbody tr td {
+        color: white !important;
+        font-weight: 500;
     }
-
-    section[data-testid="stSidebar"] {
-        background-color: #20232a;
-        border-right: 1px solid #6c63ff;
-    }
-
-    h1, h2, h3, h4 {
-        color: #6c63ff !important;
-        text-align: center;
-    }
-
-    .stButton>button {
-        background-color: #6c63ff;
-        color: white;
-        border-radius: 10px;
-        height: 3em;
-        width: 100%;
-        border: none;
-        font-weight: bold;
-        transition: 0.3s ease-in-out;
-    }
-
-    .stButton>button:hover {
-        background-color: #4b47cc;
-        transform: scale(1.05);
-    }
-
-    div[data-testid="metric-container"] {
-        background-color: #1c1c1e;
-        padding: 10px;
-        border-radius: 10px;
-        color: white;
-        border: 1px solid #6c63ff;
-        margin-bottom: 10px;
-        text-align: center;
-    }
-
-    .stDataFrame {
-        background-color: #0e1117;
-        border-radius: 10px;
-        border: 1px solid #6c63ff;
-        padding: 10px;
-        color: white;
-    }
-
-    ::-webkit-scrollbar {
-        width: 8px;
-    }
-
-    ::-webkit-scrollbar-thumb {
-        background-color: #6c63ff;
-        border-radius: 10px;
-    }
-
-    textarea {
-        border-radius: 10px !important;
-    }
-
-    .stSelectbox, .stNumberInput, .stTextInput, .stRadio, .stDateInput {
-        background-color: #1e1e1e !important;
-        border-radius: 10px !important;
+    .stSelectbox > div > div {
+        color: white !important;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# CSV dosyası
 CSV_FILE = "soru_kayitlari.csv"
+st.title("📊 TYT Soru Takip ve Analiz Aracı")
 
-# Tüm TYT dersleri ve konuları
+# Konular
 konular_dict = {
-    "Matematik": ["Temel Kavramlar", "Sayılar", "Problemler", "Fonksiyonlar", "Kümeler", "Kombinasyon", "Olasılık", "İstatistik", "Denklemler", "Geometri", "Trigonometrik Fonksiyonlar"],
-    "Türkçe": ["Sözcükte Anlam", "Cümlede Anlam", "Paragraf", "Yazım Kuralları", "Noktalama", "Dil Bilgisi", "Anlatım Bozukluğu", "Sözcük Türleri"],
-    "Fizik": ["Kuvvet ve Hareket", "Isı ve Sıcaklık", "Elektrik", "Dalgalar", "Optik", "Basınç", "Modern Fizik"],
-    "Kimya": ["Atom", "Periyodik Sistem", "Kimyasal Tepkimeler", "Asit-Baz", "Mol", "Organik Kimya"],
-    "Biyoloji": ["Hücre", "DNA", "Ekosistem", "Canlıların Sınıflandırılması", "Genetik", "Sistemler"],
-    "Tarih": ["İslamiyet Öncesi Türk Tarihi", "Osmanlı Devleti", "Kurtuluş Savaşı", "İnkılaplar", "Çağdaş Türk ve Dünya Tarihi"],
-    "Coğrafya": ["Doğa ve İnsan", "Harita Bilgisi", "İklim", "Nüfus", "Ekonomi", "Türkiye'nin Yer Şekilleri"],
-    "Felsefe": ["Bilgi Felsefesi", "Varlık Felsefesi", "Ahlak", "Sanat", "Siyaset", "Din Felsefesi"],
-    "Din Kültürü": ["İslamiyet", "İnanç Esasları", "Ahlak", "Peygamberler", "Kur’an Bilgisi"]
+    "Matematik": ["Temel Kavramlar", "Rasyonel Sayılar", "Problemler", "Permütasyon", "Kombinasyon", "Olasılık"],
+    "Türkçe": ["Paragraf", "Dil Bilgisi", "Yazım Kuralları", "Noktalama"],
+    "Fizik": ["Hareket", "Kuvvet", "Enerji", "Isı ve Sıcaklık"],
+    "Kimya": ["Maddenin Halleri", "Asit-Baz", "Kimyasal Tepkimeler"],
+    "Biyoloji": ["Hücre", "Kalıtım", "Canlıların Sınıflandırılması"],
+    "Tarih": ["İlk Çağ Uygarlıkları", "Osmanlı Devleti", "Kurtuluş Savaşı"],
+    "Coğrafya": ["Türkiye'nin Yer Şekilleri", "İklim", "Nüfus ve Yerleşme"],
+    "Felsefe": ["Bilgi Felsefesi", "Ahlak Felsefesi", "Sanat Felsefesi"],
+    "Din Kültürü": ["İslam ve İbadet", "Kur’an", "Peygamberler"]
 }
 
-# Şifre kontrolü
-st.sidebar.title("Sayfa Seç")
-sayfa = st.sidebar.radio("Menü", ["Analiz", "Konsol"])
+# 🔐 Şifre kontrolü
+st.sidebar.markdown("## 🔒 Konsol Girişi")
+password = st.sidebar.text_input("Şifre:", type="password")
+authorized = password == "1234"  # şifre burada belirleniyor
 
-# Varsayılan olarak Analiz açık
+# Sayfa seçimi
+sayfalar = ["Analiz", "Konsol"]
+if authorized:
+    sayfalar += ["Soru Ekle", "Kayıt Sil"]
+secenek = st.sidebar.radio("Sayfa Seç:", sayfalar)
 
-if sayfa == "Konsol":
-    girilen_sifre = st.sidebar.text_input("🔐 Konsola erişmek için şifre girin", type="password")
-    if girilen_sifre == "1234":
-        secenek = st.sidebar.radio("İşlem Seç", ["Soru Girişi", "Kayıt Sil"])
-
-        # Soru Girişi
-        if secenek == "Soru Girişi":
-            st.header("Yeni Soru Kaydı Ekle")
-
-            ders = st.selectbox("Ders", list(konular_dict.keys()))
-            konu = st.selectbox("Konu", konular_dict[ders])
-
-            col1, col2 = st.columns(2)
-            with col1:
-                yil = st.selectbox("Yıl / Kaynak", ["2024", "2023", "2022", "2021", "2020", "2019", "2018"])
-                soru_no = st.number_input("Soru No", min_value=1, max_value=50, step=1)
-            with col2:
-                sure = st.number_input("Süre (dakika)", min_value=0.0, step=0.1, format="%.1f")
-
-            durum = st.radio("Durum", ["Çözüldü", "Çözemedim"])
-            aciklama = st.text_area("Açıklama (isteğe bağlı)")
-
-            if st.button("Kaydet"):
-                yeni_kayit = pd.DataFrame({
-                    "Tarih": [datetime.date.today()],
-                    "Yıl": [yil],
-                    "Soru No": [soru_no],
-                    "Ders": [ders],
-                    "Konu": [konu],
-                    "Süre": [sure],
-                    "Durum": [durum],
-                    "Açıklama": [aciklama]
-                })
-
-                if os.path.exists(CSV_FILE):
-                    mevcut = pd.read_csv(CSV_FILE)
-                    df = pd.concat([mevcut, yeni_kayit], ignore_index=True)
-                else:
-                    df = yeni_kayit
-
-                df.to_csv(CSV_FILE, index=False)
-                with st.spinner("Kaydediliyor..."):
-                    time.sleep(0.5)
-                st.success("Kayıt başarıyla eklendi!")
-
-        # Kayıt Sil
-        elif secenek == "Kayıt Sil":
-            st.header("Kayıt Silme Paneli")
-
-            if os.path.exists(CSV_FILE):
-                df = pd.read_csv(CSV_FILE)
-
-                if df.empty:
-                    st.info("Kayıt dosyası boş.")
-                else:
-                    df["Görüntü"] = df.apply(lambda row: f"{row['Tarih']} | {row['Ders']} | {row['Konu']} | Soru {int(row['Soru No'])}", axis=1)
-                    secilen_kayit = st.selectbox("Silmek istediğin kaydı seç:", df["Görüntü"])
-                    secilen_index = df[df["Görüntü"] == secilen_kayit].index[0]
-
-                    if st.button("Kaydı Sil"):
-                        df = df.drop(secilen_index)
-                        df.to_csv(CSV_FILE, index=False)
-                        st.success("Kayıt silindi! Sayfa yenileniyor...")
-                        time.sleep(1)
-                        st.rerun()
-            else:
-                st.warning("Kayıt dosyası bulunamadı.")
-    else:
-        st.warning("Konsola erişim için doğru şifreyi girin!")
-
-# Analiz Sayfası
-elif sayfa == "Analiz":
-    st.title("TYT Soru Takip ve Analiz Aracı")
-    st.header("📊 Çözülen Soruların Analizi")
+# 📊 ANALİZ SAYFASI
+if secenek == "Analiz":
+    st.header("📈 Çözülen Soruların Analizi")
 
     if os.path.exists(CSV_FILE):
         df = pd.read_csv(CSV_FILE)
@@ -195,44 +69,106 @@ elif sayfa == "Analiz":
 
         st.subheader("Genel Bilgiler")
         toplam_soru = len(df)
-        cozulen = len(df[df["Durum"] == "Çözüldü"])
-        cozememe = toplam_soru - cozulen
+        cozulen = len(df[df["Durum"] == "Çözülen"])
+        cozulmeyen = toplam_soru - cozulen
         ort_sure = df["Süre"].mean().round(2)
 
         col1, col2, col3, col4 = st.columns(4)
         col1.metric("Toplam Soru", toplam_soru)
         col2.metric("Çözülen", cozulen)
-        col3.metric("Çözülemeyen", cozememe)
+        col3.metric("Çözülemeyen", cozulmeyen)
         col4.metric("Ortalama Süre", f"{ort_sure} dk")
 
-        st.subheader("Konu Bazlı Performans")
+        st.subheader("Konu Bazlı Başarı")
         konu_grup = df.groupby("Konu")["Durum"].value_counts().unstack().fillna(0)
         konu_grup["Toplam"] = konu_grup.sum(axis=1)
-        konu_grup["Başarı %"] = (konu_grup.get("Çözüldü", 0) / konu_grup["Toplam"] * 100).round(1)
-        st.dataframe(konu_grup.sort_values("Başarı %", ascending=False))
+        konu_grup["Başarı %"] = (konu_grup.get("Çözülen", 0) / konu_grup["Toplam"] * 100).round(1)
+        st.dataframe(konu_grup.sort_values("Başarı %", ascending=False), use_container_width=True)
 
         st.subheader("Süre Analizi")
-        sure_c = df[df["Durum"] == "Çözüldü"]["Süre"].mean()
-        sure_y = df[df["Durum"] == "Çözemedim"]["Süre"].mean()
+        sure_c = df[df["Durum"] == "Çözülen"]["Süre"].mean()
+        sure_y = df[df["Durum"] == "Çözülemeyen"]["Süre"].mean()
         st.write(f"✅ Çözülen Soruların Ortalama Süresi: **{sure_c:.2f} dk**")
         st.write(f"❌ Çözülemeyen Soruların Ortalama Süresi: **{sure_y:.2f} dk**")
 
         st.subheader("Grafik: Süre Karşılaştırması")
-        fig, ax = plt.subplots()
-        ax.bar(["Çözülen", "Çözemedim"], [sure_c, sure_y], color=["green", "red"])
-        ax.set_ylabel("Ortalama Süre (dk)")
-        ax.set_facecolor("#0e1117")
-        fig.patch.set_facecolor("#0e1117")
+        fig, ax = plt.subplots(facecolor="#0E1117")  # koyu arkaplan
+        ax.set_facecolor("#0E1117")
+        ax.bar(["Çözülen", "Çözülemeyen"], [sure_c, sure_y], color=["green", "red"])
+        ax.set_ylabel("Ortalama Süre (dk)", color="white")
+        ax.tick_params(colors="white")
+        for spine in ax.spines.values():
+            spine.set_edgecolor("white")
         st.pyplot(fig)
 
-        st.subheader("Çözülmeyen Sorulardan Notlar")
-        if "Açıklama" in df.columns:
-            df["Açıklama"] = df["Açıklama"].astype(str)
-            aciklamalar = df[(df["Durum"] == "Çözemedim") & (df["Açıklama"].str.strip() != "")]
-            if not aciklamalar.empty:
-                for _, row in aciklamalar.iterrows():
-                    st.markdown(f"📌 **{row['Ders']} - {row['Konu']}** → {row['Açıklama']}")
-            else:
-                st.info("Açıklama girilmiş çözülemeyen soru bulunamadı.")
+        st.subheader("Çözülemeyen Sorulardan Notlar")
+        df["Açıklama"] = df["Açıklama"].astype(str)
+        notlar = df[(df["Durum"] == "Çözülemeyen") & (df["Açıklama"].str.strip() != "")]
+        if not notlar.empty:
+            for _, row in notlar.iterrows():
+                st.markdown(f"📌 **{row['Ders']} - {row['Konu']}** → {row['Açıklama']}")
+        else:
+            st.info("Açıklama girilmiş çözülemeyen soru bulunamadı.")
     else:
         st.warning("Henüz kayıt bulunmuyor.")
+
+# 🛠️ KONSOL SAYFASI
+elif secenek == "Konsol":
+    if authorized:
+        st.success("Konsol aktif. Sol menüden işlem seçebilirsin.")
+    else:
+        st.warning("Lütfen geçerli bir şifre girin.")
+
+# ➕ SORU EKLE
+elif secenek == "Soru Ekle" and authorized:
+    st.header("📝 Yeni Soru Kaydı Ekle")
+
+    ders = st.selectbox("Ders", list(konular_dict.keys()))
+    konu = st.selectbox("Konu", konular_dict[ders])
+    col1, col2 = st.columns(2)
+    yil = col1.selectbox("Yıl / Kaynak", ["2024", "2023", "2022", "2021", "2020"])
+    soru_no = col1.number_input("Soru No", min_value=1, max_value=50, step=1)
+    sure = col2.number_input("Süre (dakika)", min_value=0.0, step=0.1, format="%.1f")
+    durum = col2.radio("Durum", ["Çözülen", "Çözülemeyen"])
+    aciklama = st.text_area("Açıklama (isteğe bağlı)")
+
+    if st.button("Kaydet"):
+        yeni_kayit = pd.DataFrame({
+            "Tarih": [datetime.date.today()],
+            "Yıl": [yil],
+            "Soru No": [soru_no],
+            "Ders": [ders],
+            "Konu": [konu],
+            "Süre": [sure],
+            "Durum": [durum],
+            "Açıklama": [aciklama]
+        })
+
+        if os.path.exists(CSV_FILE):
+            mevcut = pd.read_csv(CSV_FILE)
+            df = pd.concat([mevcut, yeni_kayit], ignore_index=True)
+        else:
+            df = yeni_kayit
+
+        df.to_csv(CSV_FILE, index=False)
+        st.success("✅ Kayıt başarıyla eklendi!")
+
+# ❌ KAYIT SİL
+elif secenek == "Kayıt Sil" and authorized:
+    st.header("🗑️ Kayıt Silme Paneli")
+    if os.path.exists(CSV_FILE):
+        df = pd.read_csv(CSV_FILE)
+        if df.empty:
+            st.info("Kayıt bulunmuyor.")
+        else:
+            df["Görüntü"] = df.apply(lambda row: f"{row['Tarih']} | {row['Ders']} | {row['Konu']} | Soru {int(row['Soru No'])}", axis=1)
+            secilen_kayit = st.selectbox("Silinecek kayıt:", df["Görüntü"])
+            index = df[df["Görüntü"] == secilen_kayit].index[0]
+            if st.button("Kaydı Sil"):
+                df.drop(index, inplace=True)
+                df.to_csv(CSV_FILE, index=False)
+                st.success("Kayıt silindi.")
+                time.sleep(1)
+                st.rerun()
+    else:
+        st.warning("Kayıt dosyası bulunamadı.")
