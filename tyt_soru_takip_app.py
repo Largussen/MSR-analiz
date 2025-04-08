@@ -4,6 +4,7 @@ import datetime
 import os
 import time
 import matplotlib.pyplot as plt
+from PIL import Image
 
 # ⛳️ Ayarlar
 CSV_FILE = "soru_kayitlari.csv"
@@ -68,7 +69,6 @@ if secenek == "Konsol":
 
 # 📊 ANALİZ SAYFASI
 if secenek == "Analiz":
-    from PIL import Image
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.image(Image.open("kemal.png"), width=200)
@@ -156,40 +156,40 @@ if secenek == "Konsol" and sifre_dogru:
         ders = st.selectbox("Ders", list(konular_dict.keys()))
         konu = st.selectbox("Konu", konular_dict[ders])
 
-    col1, col2 = st.columns(2)
-    with col1:
-        yil = st.selectbox("Yıl / Kaynak", ["2024", "2023", "2022", "2021", "2020", "2019", "2018"])
-        soru_no = st.number_input("Soru No", min_value=1, max_value=1000, step=1)
-    with col2:
-        dak = st.number_input("Süre (Dakika)", min_value=0, step=1)
-        sn = st.number_input("Süre (Saniye)", min_value=0, max_value=59, step=1)
-        sure = round(dak + sn / 60, 2)
+        col1, col2 = st.columns(2)
+        with col1:
+            yil = st.selectbox("Yıl / Kaynak", ["2024", "2023", "2022", "2021", "2020", "2019", "2018"])
+            soru_no = st.number_input("Soru No", min_value=1, max_value=1000, step=1)
+        with col2:
+            dak = st.number_input("Süre (Dakika)", min_value=0, step=1)
+            sn = st.number_input("Süre (Saniye)", min_value=0, max_value=59, step=1)
+            sure = round(dak + sn / 60, 2)
 
-    durum = st.radio("Durum", ["Çözüldü", "Çözülemeyen"])
-    zorluk = st.slider("Zorluk Derecesi (0: Çok Kolay - 10: Çok Zor)", min_value=0, max_value=10, value=5)
-    aciklama = st.text_area("Açıklama (isteğe bağlı)")
+        durum = st.radio("Durum", ["Çözüldü", "Çözülemeyen"])
+        zorluk = st.slider("Zorluk Derecesi (0: Çok Kolay - 10: Çok Zor)", min_value=0, max_value=10, value=5)
+        aciklama = st.text_area("Açıklama (isteğe bağlı)")
 
-    if st.button("Kaydet"):
-        yeni_kayit = pd.DataFrame({
-            "Tarih": [datetime.date.today()],
-            "Yıl": [yil],
-            "Soru No": [soru_no],
-            "Ders": [ders],
-            "Konu": [konu],
-            "Süre": [sure],
-            "Durum": [durum],
-            "Zorluk": [zorluk],
-            "Açıklama": [aciklama]
-        })
+        if st.button("Kaydet"):
+            yeni_kayit = pd.DataFrame({
+                "Tarih": [datetime.date.today()],
+                "Yıl": [yil],
+                "Soru No": [soru_no],
+                "Ders": [ders],
+                "Konu": [konu],
+                "Süre": [sure],
+                "Durum": [durum],
+                "Zorluk": [zorluk],
+                "Açıklama": [aciklama]
+            })
 
-        if os.path.exists(CSV_FILE):
-            mevcut = pd.read_csv(CSV_FILE)
-            df = pd.concat([mevcut, yeni_kayit], ignore_index=True)
-        else:
-            df = yeni_kayit
+            if os.path.exists(CSV_FILE):
+                mevcut = pd.read_csv(CSV_FILE)
+                df = pd.concat([mevcut, yeni_kayit], ignore_index=True)
+            else:
+                df = yeni_kayit
 
-        df.to_csv(CSV_FILE, index=False)
-        st.success("Kayıt başarıyla eklendi!")
+            df.to_csv(CSV_FILE, index=False)
+            st.success("Kayıt başarıyla eklendi!")
 
     elif secim == "Kayıt Sil":
         st.header("🗑️ Kayıt Silme")
