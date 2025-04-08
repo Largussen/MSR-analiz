@@ -38,7 +38,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.title("📊 TYT Soru Takip ve Analiz Aracı")
+st.title("")
 
 konular_dict = {
     "Matematik": ["Temel Kavramlar", "Sayılar", "Bölme-Bölünebilme", "OBEB-OKEK", "Rasyonel Sayılar", "Ondalık Sayılar",
@@ -55,12 +55,12 @@ konular_dict = {
 }
 
 menu = ["Analiz", "Konsol"]
-secenek = st.sidebar.radio("📌 Sayfa Seç:", menu)
+secenek = st.sidebar.radio("Menü:", menu)
 
 # 🔐 Konsol Şifre Kontrolü
 sifre_dogru = False
 if secenek == "Konsol":
-    girilen = st.text_input("🔐 Konsol Girişi - Şifre:", type="password")
+    girilen = st.text_input("Konsol Girişi - Şifre:", type="password")
     if girilen == KONSOL_SIFRE:
         sifre_dogru = True
     else:
@@ -68,13 +68,13 @@ if secenek == "Konsol":
 
 # 📊 ANALİZ SAYFASI
 if secenek == "Analiz":
-    st.header("📈 Çözülen Soruların Analizi")
+    st.header("")
 
     if os.path.exists(CSV_FILE):
         df = pd.read_csv(CSV_FILE)
 
         if not df.empty:
-            st.subheader("🔍 Filtreleme")
+            st.subheader("Filtreleme")
             dersler = ["Tümü"] + sorted(df["Ders"].unique())
             secilen_ders = st.selectbox("Derse göre filtrele", dersler)
 
@@ -87,7 +87,7 @@ if secenek == "Analiz":
             if secilen_yil != "Tümü":
                 df = df[df["Yıl"] == secilen_yil]
 
-            st.subheader("📌 Genel Bilgiler")
+            st.subheader("Genel Bilgiler")
             toplam_soru = len(df)
             cozulen = len(df[df["Durum"] == "Çözüldü"])
             cozememe = toplam_soru - cozulen
@@ -103,7 +103,7 @@ if secenek == "Analiz":
             with col4:
                 st.metric("Ortalama Süre", f"{ort_sure} dk")
 
-            st.subheader("📚 Konu Bazlı Başarı")
+            st.subheader("Konu Bazlı Başarı")
             konu_grup = df.groupby("Konu")["Durum"].value_counts().unstack().fillna(0)
             konu_grup["Toplam"] = konu_grup.sum(axis=1)
             konu_grup["Başarı %"] = (konu_grup.get("Çözüldü", 0) / konu_grup["Toplam"] * 100).round(1)
@@ -115,7 +115,7 @@ if secenek == "Analiz":
             st.write(f"✅ Çözülen Ortalama Süre: **{sure_c:.2f} dk**")
             st.write(f"❌ Çözülemeyen Ortalama Süre: **{sure_y:.2f} dk**")
 
-            st.subheader("📊 Süre Karşılaştırma Grafiği")
+            
             fig, ax = plt.subplots(facecolor="#121212")
             ax.bar(["Çözülen", "Çözülemeyen"], [sure_c, sure_y], color=["green", "red"])
             ax.set_ylabel("Ortalama Süre (dk)")
@@ -123,7 +123,7 @@ if secenek == "Analiz":
             fig.patch.set_facecolor("#121212")
             st.pyplot(fig)
 
-            st.subheader("📌 Açıklamalı Sorular")
+            st.subheader("Açıklamalı Sorular")
             df["Açıklama"] = df["Açıklama"].astype(str)
             aciklamalar = df[(df["Durum"] == "Çözülemeyen") & (df["Açıklama"].str.strip() != "")]
             if not aciklamalar.empty:
