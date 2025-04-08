@@ -6,25 +6,47 @@ import time
 import matplotlib.pyplot as plt
 from PIL import Image
 
-# ⛳️ Ayarlar
+# Ayarlar
 CSV_FILE = "soru_kayitlari.csv"
 KONSOL_SIFRE = "1234"
 
-# 🎨 Sayfa ayarları ve tema
-st.set_page_config(page_title="TYT Soru Takip", layout="wide", initial_sidebar_state="expanded")
+# Sayfa yapısı ve tema
+st.set_page_config(page_title="TYT Soru Takip", layout="wide")
 st.markdown("""
     <style>
-    body { background-color: #121212; color: white; }
-    .stDataFrame tbody td, .stDataFrame thead th, div[data-testid="stMetricValue"] { color: white !important; }
-    button:hover { transform: scale(1.03); }
-    @media only screen and (max-width: 600px) {
-        .stColumn { display: block !important; width: 100% !important; }
+    body {
+        background-color: #121212;
+        color: white;
+    }
+    .stDataFrame tbody td {
+        color: white !important;
+    }
+    .stDataFrame thead th {
+        color: white !important;
+    }
+    div[data-testid="stMetricValue"] {
+        color: white;
+    }
+    button:hover {
+        transform: scale(1.03);
     }
     </style>
 """, unsafe_allow_html=True)
 
-st.title("")
+# Menü
+menu = ["Analiz", "Soru Notları", "İşaretli Sorular", "Konsol"]
+secenek = st.sidebar.radio("Menü:", menu)
 
+# Şifre kontrolü
+sifre_dogru = False
+if secenek == "Konsol":
+    girilen = st.text_input("Konsol Girişi - Şifre:", type="password")
+    if girilen == KONSOL_SIFRE:
+        sifre_dogru = True
+    else:
+        st.warning("Konsola erişmek için doğru şifreyi girin.")
+
+# Konular
 konular_dict = {
     "Matematik": ["Temel Kavramlar", "Sayılar", "Bölme-Bölünebilme", "OBEB-OKEK", "Rasyonel Sayılar", "Ondalık Sayılar",
                   "Basamak Kavramı", "Faktöriyel", "Asal Çarpan", "Modüler Aritmetik", "EBOB-EKOK", "Çarpanlara Ayırma",
@@ -39,23 +61,9 @@ konular_dict = {
     "Din Kültürü": ["İslamiyet", "İnanç", "İbadet", "Ahlak", "Din ve Hayat"]
 }
 
-menu = ["Analiz", "İşaretli Sorular", "Soru Notları", "Konsol"]
-secenek = st.sidebar.radio("Menü:", menu)
-
-# 🔐 Konsol Şifre Kontrolü
-sifre_dogru = False
-if secenek == "Konsol":
-    girilen = st.text_input("Konsol Girişi - Şifre:", type="password")
-    if girilen == KONSOL_SIFRE:
-        sifre_dogru = True
-    else:
-        st.warning("Konsola erişmek için doğru şifreyi girin.")
-
 # 📊 ANALİZ SAYFASI
 if secenek == "Analiz":
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        st.image(Image.open("kemal.png"), width=200)
+    st.image(Image.open("kemal.png"), width=200)
     st.header("")
 
     if os.path.exists(CSV_FILE):
@@ -65,18 +73,15 @@ if secenek == "Analiz":
             st.subheader("Filtreleme")
             dersler = ["Tümü"] + sorted(df["Ders"].unique())
             secilen_ders = st.selectbox("Derse göre filtrele", dersler)
+
             if secilen_ders != "Tümü":
                 df = df[df["Ders"] == secilen_ders]
 
-            yillar = ["Tümü"] + sorted(df["Yıl"].unique())
-            secilen_yil = st.selectbox("Yıla göre filtrele", yillar)
-            if secilen_yil != "Tümü":
-                df = df[df["Yıl"] == secilen_yil]
-
             zorluklar = ["Tümü"] + sorted(df["Zorluk"].dropna().unique())
-            secilen_zorluk = st.selectbox("Zorluğa göre filtrele", zorluklar)
+            secilen_zorluk = st.selectbox("Zorluk seviyesine göre filtrele", zorluklar)
+
             if secilen_zorluk != "Tümü":
-                df = df[df["Zorluk"] == secilen_zorluk]
+                df = df[df["Zorluk"] == int(secilen_zorluk)]
 
             st.subheader("Genel Bilgiler")
             toplam_soru = len(df)
@@ -86,11 +91,11 @@ if secenek == "Analiz":
             ort_zorluk = df["Zorluk"].mean().round(2)
 
             col1, col2, col3, col4, col5 = st.columns(5)
-            with col1: st.metric("Toplam Soru", toplam_soru)
-            with col2: st.metric("Çözülen", cozulen)
-            with col3: st.metric("Çözülemeyen", cozememe)
-            with col4: st.metric("Ortalama Süre", f"{ort_sure} dk")
-            with col5: st.metric("Ort. Zorluk", ort_zorluk)
+            col1.metric("Toplam Soru", toplam_soru)
+            col2.metric("Çözülen", cozulen)
+            col3.metric("Çözülemeyen", cozememe)
+            col4.metric("Ortalama Süre", f"{ort_sure} dk")
+            col5.metric("Ortalama Zorluk", ort_zorluk)
 
             st.subheader("Konu Bazlı Başarı")
             konu_grup = df.groupby("Konu")["Durum"].value_counts().unstack().fillna(0)
@@ -109,18 +114,38 @@ if secenek == "Analiz":
             ax.set_ylabel("Ortalama Süre (dk)", color="white")
             ax.tick_params(axis='x', colors='white')
             ax.tick_params(axis='y', colors='white')
-            for spine in ax.spines.values(): spine.set_color("white")
+            for spine in ax.spines.values():
+                spine.set_color("white")
             ax.set_facecolor("#1E1E1E")
             fig.patch.set_facecolor("#121212")
             st.pyplot(fig)
+
+# 📝 SORU NOTLARI SAYFASI
+if secenek == "Soru Notları":
+    st.header("📝 Soru Notları")
+    if os.path.exists(CSV_FILE):
+        df = pd.read_csv(CSV_FILE)
+        df["Açıklama"] = df["Açıklama"].astype(str)
+        notlu = df[df["Açıklama"].str.strip() != ""]
+        if not notlu.empty:
+            dersler = ["Tümü"] + sorted(notlu["Ders"].unique())
+            sec_ders = st.selectbox("Ders Seç", dersler)
+            if sec_ders != "Tümü":
+                notlu = notlu[notlu["Ders"] == sec_ders]
+
+            konular = ["Tümü"] + sorted(notlu["Konu"].unique())
+            sec_konu = st.selectbox("Konu Seç", konular)
+            if sec_konu != "Tümü":
+                notlu = notlu[notlu["Konu"] == sec_konu]
+
+            for _, row in notlu.iterrows():
+                st.markdown(f"**{row['Ders']} - {row['Konu']} | Soru {int(row['Soru No'])}** → {row['Açıklama']}")
         else:
-            st.info("Henüz kayıt yok.")
-    else:
-        st.warning("Veri dosyası bulunamadı.")
+            st.info("Henüz not girilmiş soru bulunmuyor.")
 
 # ⭐️ İŞARETLİ SORULAR SAYFASI
-elif secenek == "İşaretli Sorular":
-    st.header("İşaretli Sorular")
+if secenek == "İşaretli Sorular":
+    st.header("⭐️ İşaretli Sorular")
     if os.path.exists(CSV_FILE):
         df = pd.read_csv(CSV_FILE)
         if "Yıldızlı" in df.columns and True in df["Yıldızlı"].unique():
@@ -131,46 +156,32 @@ elif secenek == "İşaretli Sorular":
                     sorular = alt_df["Soru No"].tolist()
                     st.write(f"İşaretli Sorular: {', '.join(map(str, sorular))}")
         else:
-            st.info("İşaretli soru bulunamadı.")
+            st.info("İşaretli soru yok.")
     else:
-        st.warning("Veri dosyası bulunamadı.")
+        st.warning("Kayıt dosyası bulunamadı.")
 
-# 📝 SORU NOTLARI SAYFASI
-elif secenek == "Soru Notları":
-    st.header("Detaylı Soru Notları")
-    if os.path.exists(CSV_FILE):
-        df = pd.read_csv(CSV_FILE)
-        df["Açıklama"] = df["Açıklama"].astype(str)
-        aciklamalar = df[(df["Açıklama"].str.strip() != "")]
-        if not aciklamalar.empty:
-            for _, row in aciklamalar.iterrows():
-                st.markdown(f"**{row['Ders']} - {row['Konu']}** → {row['Açıklama']}")
-        else:
-            st.info("Açıklama girilmiş soru bulunamadı.")
-    else:
-        st.warning("CSV dosyası bulunamadı.")
-
-# 🔧 KONSOL
-elif secenek == "Konsol" and sifre_dogru:
+# 🛠 KONSOL SAYFASI
+if secenek == "Konsol" and sifre_dogru:
     secim = st.radio("İşlem Seç:", ["Yeni Soru Ekle", "Kayıt Sil"])
 
     if secim == "Yeni Soru Ekle":
-        st.header("➕ Yeni Soru Kaydı Ekle")
+        st.header("➕ Yeni Soru Kaydı")
         ders = st.selectbox("Ders", list(konular_dict.keys()))
         konu = st.selectbox("Konu", konular_dict[ders])
+
         col1, col2 = st.columns(2)
         with col1:
             yil = st.selectbox("Yıl / Kaynak", ["2024", "2023", "2022", "2021", "2020"])
-            soru_no = st.number_input("Soru No", min_value=1, max_value=1000)
+            soru_no = st.number_input("Soru No", min_value=1, step=1)
         with col2:
-            dak = st.number_input("Süre (Dakika)", min_value=0)
-            sn = st.number_input("Süre (Saniye)", min_value=0, max_value=59)
+            dak = st.number_input("Süre (Dakika)", min_value=0, step=1)
+            sn = st.number_input("Süre (Saniye)", min_value=0, max_value=59, step=1)
             sure = round(dak + sn / 60, 2)
 
         durum = st.radio("Durum", ["Çözüldü", "Çözülemeyen"])
-        zorluk = st.slider("Zorluk Derecesi (0: Çok Kolay - 4: Çok Zor)", 0, 4, 2)
-        isaretli = st.checkbox("Bu soruyu işaretle")
-        aciklama = st.text_area("Açıklama (isteğe bağlı)")
+        zorluk = st.slider("Zorluk Seviyesi", 0, 4, 2)
+        isaretli = st.checkbox("Soruyu işaretle")
+        aciklama = st.text_area("Açıklama (İsteğe Bağlı)")
 
         if st.button("Kaydet"):
             yeni_kayit = pd.DataFrame({
@@ -185,26 +196,29 @@ elif secenek == "Konsol" and sifre_dogru:
                 "Yıldızlı": [isaretli],
                 "Açıklama": [aciklama]
             })
+
             if os.path.exists(CSV_FILE):
                 mevcut = pd.read_csv(CSV_FILE)
                 df = pd.concat([mevcut, yeni_kayit], ignore_index=True)
             else:
                 df = yeni_kayit
+
             df.to_csv(CSV_FILE, index=False)
             st.success("Kayıt başarıyla eklendi!")
 
     elif secim == "Kayıt Sil":
-        st.header("🗑️ Kayıt Silme")
+        st.header("🗑️ Kayıt Sil")
         if os.path.exists(CSV_FILE):
             df = pd.read_csv(CSV_FILE)
             if df.empty:
                 st.info("Hiç kayıt yok.")
             else:
                 df["Görüntü"] = df.apply(lambda row: f"{row['Tarih']} | {row['Ders']} | {row['Konu']} | Soru {int(row['Soru No'])}", axis=1)
-                secilen_kayit = st.selectbox("Silmek istediğin kayıt:", df["Görüntü"])
-                secilen_index = df[df["Görüntü"] == secilen_kayit].index[0]
+                secilen = st.selectbox("Silinecek kayıt:", df["Görüntü"])
+                index = df[df["Görüntü"] == secilen].index[0]
+
                 if st.button("Sil"):
-                    df = df.drop(secilen_index)
+                    df = df.drop(index)
                     df.to_csv(CSV_FILE, index=False)
                     st.success("Kayıt silindi!")
                     time.sleep(1)
