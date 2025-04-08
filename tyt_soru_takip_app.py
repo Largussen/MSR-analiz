@@ -109,7 +109,7 @@ if secenek == "Analiz":
             konu_grup["Başarı %"] = (konu_grup.get("Çözüldü", 0) / konu_grup["Toplam"] * 100).round(1)
             st.dataframe(konu_grup.sort_values("Başarı %", ascending=False))
 
-            st.subheader("⏱️ Süre Analizi")
+            st.subheader("Süre Analizi")
             sure_c = df[df["Durum"] == "Çözüldü"]["Süre"].mean()
             sure_y = df[df["Durum"] == "Çözülemeyen"]["Süre"].mean()
             st.write(f"✅ Çözülen Ortalama Süre: **{sure_c:.2f} dk**")
@@ -123,7 +123,7 @@ if secenek == "Analiz":
             fig.patch.set_facecolor("#121212")
             st.pyplot(fig)
 
-            st.subheader("Açıklamalı Sorular")
+            st.subheader("Soru Notları")
             df["Açıklama"] = df["Açıklama"].astype(str)
             aciklamalar = df[(df["Durum"] == "Çözülemeyen") & (df["Açıklama"].str.strip() != "")]
             if not aciklamalar.empty:
