@@ -3,7 +3,7 @@ import pandas as pd
 import datetime
 import os
 import time
-import altair as alt
+import matplotlib.pyplot as plt
 
 # CSV dosyası
 CSV_FILE = "soru_kayitlari.csv"
@@ -17,7 +17,7 @@ st.markdown("Çözdüğün soruları ders ve konu bazında takip et, analizlerle
 
 # Tüm TYT dersleri ve konuları
 konular_dict = {
-    "Matematik": [...],  # Buraya konular ekle (önceki koddaki gibi)
+    "Matematik": [...],  # daha önce paylaştığın gibi buraya konuları ekle
     "Türkçe": [...],
     "Fizik": [...],
     "Kimya": [...],
@@ -31,12 +31,12 @@ konular_dict = {
 # Sayfa seçimi
 secenek = st.sidebar.radio("Sayfa Seç:", ["Soru Girişi", "Analiz", "Kayıt Sil"])
 
-# ➕ Soru Girişi Sayfası
+# Soru Girişi
 if secenek == "Soru Girişi":
     st.header("Yeni Soru Kaydı Ekle")
 
     ders = st.selectbox("Ders", list(konular_dict.keys()))
-    konu = st.selectbox("Konu", konular_dict[ders])
+    konu = st.selectbox("Konu", konular_dict.get(ders, []))
 
     col1, col2 = st.columns(2)
     with col1:
@@ -57,7 +57,7 @@ if secenek == "Soru Girişi":
             "Konu": [konu],
             "Süre": [sure],
             "Durum": [durum],
-            "Açıklama": [aciklama]
+            "Açıklama": [str(aciklama)]
         })
 
         if os.path.exists(CSV_FILE):
@@ -67,11 +67,9 @@ if secenek == "Soru Girişi":
             df = yeni_kayit
 
         df.to_csv(CSV_FILE, index=False)
-        with st.spinner("Kaydediliyor..."):
-            time.sleep(0.5)
-        st.success("Kayıt başarıyla eklendi!")
+        st.success("✅ Kayıt başarıyla eklendi!")
 
-# 📊 Analiz Sayfası
+# Analiz
 elif secenek == "Analiz":
     st.header("Çözülen Soruların Analizi")
 
@@ -79,75 +77,63 @@ elif secenek == "Analiz":
         df = pd.read_csv(CSV_FILE)
 
         st.subheader("Filtreleme")
-        dersler = ["Tümü"] + sorted(df["Ders"].unique())
+        dersler = ["Tümü"] + sorted(df["Ders"].dropna().unique())
         secilen_ders = st.selectbox("Derse göre filtrele", dersler)
 
         if secilen_ders != "Tümü":
             df = df[df["Ders"] == secilen_ders]
 
-        yillar = ["Tümü"] + sorted(df["Yıl"].unique())
+        yillar = ["Tümü"] + sorted(df["Yıl"].dropna().unique())
         secilen_yil = st.selectbox("Yıla göre filtrele", yillar)
 
         if secilen_yil != "Tümü":
             df = df[df["Yıl"] == secilen_yil]
 
-        st.subheader("Genel Bilgiler")
-        toplam_soru = len(df)
-        cozulen = len(df[df["Durum"] == "Çözüldü"])
-        cozememe = toplam_soru - cozulen
-        ort_sure = df["Süre"].mean().round(2)
-
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
-            st.metric("Toplam Soru", toplam_soru)
-        with col2:
-            st.metric("Çözülen", cozulen)
-        with col3:
-            st.metric("Çözülemeyen", cozememe)
-        with col4:
-            st.metric("Ortalama Süre", f"{ort_sure} dk")
-
-        st.subheader("Konu Bazlı Performans")
-        konu_grup = df.groupby("Konu")["Durum"].value_counts().unstack().fillna(0)
-        konu_grup["Toplam"] = konu_grup.sum(axis=1)
-        konu_grup["Başarı %"] = (konu_grup.get("Çözüldü", 0) / konu_grup["Toplam"] * 100).round(1)
-        st.dataframe(konu_grup.sort_values("Başarı %", ascending=False))
-
-        st.subheader("Açıklamalar (Neden çözemedim?)")
-        aciklamalar = df[(df["Durum"] == "Çözemedim") & (df["Açıklama"].str.strip() != "")]
-        if not aciklamalar.empty:
-            for _, row in aciklamalar.iterrows():
-                st.markdown(f"- **{row['Ders']} / {row['Konu']}** – _{row['Açıklama']}_")
+        if df.empty:
+            st.info("Bu filtrelere ait veri bulunamadı.")
         else:
-            st.info("Çözülemeyen sorulara ait açıklama bulunmuyor.")
+            st.subheader("Genel Bilgiler")
+            toplam_soru = len(df)
+            cozulen = len(df[df["Durum"] == "Çözüldü"])
+            cozememe = toplam_soru - cozulen
+            ort_sure = df["Süre"].mean().round(2)
+            ort_sure_cozulen = df[df["Durum"] == "Çözüldü"]["Süre"].mean().round(2)
+            ort_sure_cozemedim = df[df["Durum"] == "Çözemedim"]["Süre"].mean().round(2)
 
-        st.subheader("Süre Karşılaştırması")
-        ort_sure_df = df.groupby("Durum")["Süre"].mean().reset_index()
-        chart = alt.Chart(ort_sure_df).mark_bar().encode(
-            x=alt.X("Durum:N", title="Durum"),
-            y=alt.Y("Süre:Q", title="Ortalama Süre (dk)"),
-            color="Durum:N",
-            tooltip=["Durum", "Süre"]
-        ).properties(width=400, height=300)
-        st.altair_chart(chart, use_container_width=True)
+            col1, col2, col3, col4 = st.columns(4)
+            col1.metric("Toplam Soru", toplam_soru)
+            col2.metric("Çözülen", cozulen)
+            col3.metric("Çözülemeyen", cozememe)
+            col4.metric("Ortalama Süre", f"{ort_sure} dk")
 
-        st.subheader("Ders Bazlı Başarı Grafiği")
-        ders_grup = df.groupby("Ders")["Durum"].value_counts().unstack().fillna(0)
-        ders_grup["Toplam"] = ders_grup.sum(axis=1)
-        ders_grup["Başarı %"] = (ders_grup.get("Çözüldü", 0) / ders_grup["Toplam"] * 100).round(1)
+            st.subheader("Süre Karşılaştırması")
+            fig, ax = plt.subplots()
+            ax.bar(["Çözüldü", "Çözemedim"], [ort_sure_cozulen, ort_sure_cozemedim], color=["green", "red"])
+            ax.set_ylabel("Ortalama Süre (dk)")
+            ax.set_title("Çözülen vs Çözülemeyen Soruların Süre Ortalaması")
+            st.pyplot(fig)
 
-        ders_chart = alt.Chart(ders_grup.reset_index()).mark_bar().encode(
-            x=alt.X("Ders:N", sort="-y"),
-            y=alt.Y("Başarı %:Q"),
-            color=alt.Color("Başarı %:Q", scale=alt.Scale(scheme='greenblue')),
-            tooltip=["Ders", "Başarı %"]
-        ).properties(height=400)
-        st.altair_chart(ders_chart, use_container_width=True)
+            st.subheader("Konu Bazlı Performans")
+            konu_grup = df.groupby("Konu")["Durum"].value_counts().unstack().fillna(0)
+            konu_grup["Toplam"] = konu_grup.sum(axis=1)
+            konu_grup["Başarı %"] = (konu_grup.get("Çözüldü", 0) / konu_grup["Toplam"] * 100).round(1)
+            st.dataframe(konu_grup.sort_values("Başarı %", ascending=False))
+
+            st.subheader("Çözemediklerin - Açıklamalar")
+            if "Açıklama" in df.columns:
+                df["Açıklama"] = df["Açıklama"].astype(str)
+                aciklamalar = df[(df["Durum"] == "Çözemedim") & (df["Açıklama"].str.strip() != "")]
+                if not aciklamalar.empty:
+                    st.table(aciklamalar[["Tarih", "Ders", "Konu", "Soru No", "Açıklama"]])
+                else:
+                    st.info("Henüz açıklamalı çözemedim verisi yok.")
+            else:
+                st.warning("Açıklama verisi bulunamadı.")
 
     else:
         st.warning("Henüz kayıt bulunmuyor.")
 
-# 🗑️ Kayıt Sil Sayfası
+# Kayıt Sil
 elif secenek == "Kayıt Sil":
     st.header("Kayıt Silme Paneli")
 
