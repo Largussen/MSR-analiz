@@ -152,9 +152,9 @@ if secenek == "Konsol" and sifre_dogru:
     secim = st.radio("İşlem Seç:", ["Yeni Soru Ekle", "Kayıt Sil"])
 
     if secim == "Yeni Soru Ekle":
-    st.header("➕ Yeni Soru Kaydı Ekle")
-    ders = st.selectbox("Ders", list(konular_dict.keys()))
-    konu = st.selectbox("Konu", konular_dict[ders])
+        st.header("➕ Yeni Soru Kaydı Ekle")
+        ders = st.selectbox("Ders", list(konular_dict.keys()))
+        konu = st.selectbox("Konu", konular_dict[ders])
 
     col1, col2 = st.columns(2)
     with col1:
