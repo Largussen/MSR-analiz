@@ -136,9 +136,9 @@ elif secenek == "Soru Notları":
     else:
         st.warning("Veri dosyası bulunamadı.")
 
-# ⭐ YILDIZLI SORULAR
-elif secenek == "Yıldızlı Sorular":
-    st.header("⭐ Yıldızlı Sorular")
+
+elif secenek == "İşaretli Sorular":
+    st.header("İşaretli Sorular")
     if os.path.exists(CSV_FILE):
         df = pd.read_csv(CSV_FILE)
         if "Yıldızlı" in df.columns and True in df["Yıldızlı"].unique():
