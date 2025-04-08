@@ -68,7 +68,24 @@ if secenek == "Konsol":
 
 # 📊 ANALİZ SAYFASI
 if secenek == "Analiz":
-    st.image("kemal.png", width=500)
+    st.markdown("""
+    <style>
+    .profil-resmi {
+        display: flex;
+        justify-content: center;
+        margin-top: -10px;
+        margin-bottom: -20px;
+    }
+    .profil-resmi img {
+        width: 140px;
+        border-radius: 50%;
+    }
+    </style>
+    <div class='profil-resmi'>
+        <img src='kemal.png' />
+    </div>
+""", unsafe_allow_html=True)
+
     st.header("")
 
     if os.path.exists(CSV_FILE):
