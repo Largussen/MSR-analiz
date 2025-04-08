@@ -128,7 +128,7 @@ if secenek == "Analiz":
             aciklamalar = df[(df["Durum"] == "Çözülemeyen") & (df["Açıklama"].str.strip() != "")]
             if not aciklamalar.empty:
                 for _, row in aciklamalar.iterrows():
-                    st.markdown(f"📌 **{row['Ders']} - {row['Konu']}** → {row['Açıklama']}")
+                    st.markdown(f" **{row['Ders']} - {row['Konu']}** → {row['Açıklama']}")
             else:
                 st.info("Açıklama girilmiş çözülemeyen soru bulunamadı.")
         else:
