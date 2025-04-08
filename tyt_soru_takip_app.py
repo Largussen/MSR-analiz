@@ -1,7 +1,5 @@
-
 import streamlit as st
 import pandas as pd
-import datetime
 import os
 
 # CSV dosyası
@@ -9,7 +7,6 @@ CSV_FILE = "soru_kayitlari.csv"
 
 # Uygulama başlığı
 st.title("📘 TYT Soru Takip ve Analiz Aracı")
-st.markdown("Konu konu çözdüğün soruları takip etmek ve analiz etmek için küçük bir araç.")
 
 # Sayfa seçimi
 secenek = st.sidebar.radio("Sayfa Seç:", ["➕ Soru Girişi", "📊 Analiz"])
@@ -21,9 +18,6 @@ konular = [
     "Köklü Sayılar", "Çarpanlara Ayırma", "Oran-Orantı", "Problemler", "Kümeler", "Fonksiyonlar",
     "Polinomlar", "2. Dereceden Denklemler", "Çokgenler", "Çember", "Olasılık"
 ]
-
-# Ders seçimi (ileride genişletmek için hazır bıraktık)
-ders = "Matematik"
 
 # Soru Girişi Sayfası
 if secenek == "➕ Soru Girişi":
@@ -45,7 +39,7 @@ if secenek == "➕ Soru Girişi":
             "Tarih": [datetime.date.today()],
             "Yıl": [yil],
             "Soru No": [soru_no],
-            "Ders": [ders],
+            "Ders": ["Matematik"],
             "Konu": [konu],
             "Süre": [sure],
             "Durum": [durum],
@@ -61,19 +55,22 @@ if secenek == "➕ Soru Girişi":
         df.to_csv(CSV_FILE, index=False)
         st.success("✅ Kayıt başarıyla eklendi!")
 
-# Analiz Sayfası
+# Silme İşlemi
 elif secenek == "📊 Analiz":
     st.header("📊 Çözülen Soruların Analizi")
 
     if os.path.exists(CSV_FILE):
         df = pd.read_csv(CSV_FILE)
 
-        st.subheader("Filtreleme")
-        yillar = ["Tümü"] + sorted(df["Yıl"].unique().tolist())
-        secilen_yil = st.selectbox("Yıla göre filtrele", yillar)
+        # Soruları listeleme ve silme butonu ekleyelim
+        soru_no_sil = st.selectbox("Silmek istediğiniz soru numarasını seçin:", df["Soru No"].unique())
 
-        if secilen_yil != "Tümü":
-            df = df[df["Yıl"] == secilen_yil]
+        if st.button("Seçilen Soruyu Sil"):
+            # Seçilen soruyu dataframe'den kaldırma
+            df_sil = df[df["Soru No"] != soru_no_sil]
+            df_sil.to_csv(CSV_FILE, index=False)
+            st.success(f"✅ {soru_no_sil} numaralı soru başarıyla silindi!")
+            st.experimental_rerun()  # Sayfayı yenile
 
         st.subheader("📌 Genel Bilgiler")
         toplam_soru = len(df)
@@ -86,10 +83,5 @@ elif secenek == "📊 Analiz":
         st.markdown(f"- Çözülemeyen: **{cozememe}** ❌")
         st.markdown(f"- Ortalama Süre: **{ort_sure} dk**")
 
-        st.subheader("📚 Konu Bazlı Performans")
-        konu_grup = df.groupby("Konu")["Durum"].value_counts().unstack().fillna(0)
-        konu_grup["Toplam"] = konu_grup.sum(axis=1)
-        konu_grup["Başarı %"] = (konu_grup.get("✅ Çözüldü", 0) / konu_grup["Toplam"] * 100).round(1)
-        st.dataframe(konu_grup.sort_values("Başarı %", ascending=False))
     else:
         st.warning("Henüz kayıt bulunmuyor. Önce soru girişi yapmalısın.")
