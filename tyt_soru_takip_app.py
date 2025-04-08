@@ -5,32 +5,32 @@ import os
 import time
 import matplotlib.pyplot as plt
 
+# CSV dosyası
 CSV_FILE = "soru_kayitlari.csv"
 
+# Sayfa ayarı
 st.set_page_config(page_title="TYT Soru Takip", layout="wide", initial_sidebar_state="expanded")
+
+# Başlık
 st.title("TYT Soru Takip ve Analiz Aracı")
 
+# Tüm TYT dersleri ve konuları
 konular_dict = {
-    "Matematik": [
-        "Temel Kavramlar", "Sayı Basamakları", "Bölme-Bölünebilme", "Asal Sayılar",
-        "OBEB-OKEK", "Rasyonel Sayılar", "Ondalık Sayılar", "Mutlak Değer", "Üslü Sayılar",
-        "Köklü Sayılar", "Çarpanlara Ayırma", "Oran-Orantı", "Denklem Çözme", "Problemler",
-        "Kümeler", "Fonksiyonlar", "Polinomlar", "2. Dereceden Denklemler", "Eşitsizlikler",
-        "Logaritma", "Trigonometri", "Parabol", "Karmaşık Sayılar", "Binom", "Permütasyon-Kombinasyon",
-        "Olasılık", "İstatistik", "Türev", "İntegral"
-    ],
-    "Türkçe": ["Sözcükte Anlam", "Cümlede Anlam", "Paragraf", "Dil Bilgisi", "Yazım Kuralları"],
-    "Fizik": ["Hareket", "Kuvvet", "İş ve Enerji", "Elektrik", "Optik", "Dalgalar"],
-    "Kimya": ["Atom", "Periyodik Sistem", "Kimyasal Türler", "Stokiyometri", "Asit-Baz", "Organik Kimya"],
-    "Biyoloji": ["Hücre", "DNA", "Ekosistem", "Canlıların Sınıflandırılması", "Sistemler"],
-    "Tarih": ["İlk Uygarlıklar", "Osmanlı Tarihi", "Kurtuluş Savaşı", "İnkılaplar"],
-    "Coğrafya": ["Harita Bilgisi", "İklim", "Yer Şekilleri", "Nüfus", "Bölgeler"],
-    "Felsefe": ["Felsefenin Konusu", "Bilgi Felsefesi", "Ahlak Felsefesi"],
-    "Din Kültürü": ["İslam ve İbadet", "Hz. Muhammed", "Kur'an Bilgisi"]
+    "Matematik": ["Temel Kavramlar", "Sayılar", "Bölme", "OBEB-OKEK", "Rasyonel Sayılar", "Ondalık Sayılar", "Basit Eşitsizlikler", "Mutlak Değer", "Üslü Sayılar", "Köklü Sayılar", "Çarpanlara Ayırma", "Oran Orantı", "Denklem Çözme", "Problemler", "Kümeler", "Fonksiyonlar", "Polinomlar", "Permütasyon", "Kombinasyon", "Olasılık", "İstatistik", "2. Dereceden Denklemler", "Logaritma", "Trigonometri", "Karma Konular"],
+    "Türkçe": ["Sözcükte Anlam", "Cümlede Anlam", "Paragrafta Anlam", "Dil Bilgisi", "Yazım Kuralları", "Noktalama", "Anlatım Bozukluğu"],
+    "Fizik": ["Hareket", "Kuvvet", "Enerji", "Isı", "Işık", "Elektrik", "Manyetizma", "Dalgalar"],
+    "Kimya": ["Atom", "Periyodik Sistem", "Kimyasal Türler", "Bileşikler", "Kimyasal Tepkimeler", "Mol", "Çözeltiler"],
+    "Biyoloji": ["Hücre", "Canlıların Yapısı", "Kalıtım", "Ekosistem", "Canlılar Alemi"],
+    "Tarih": ["İlk Çağ", "Orta Çağ", "Osmanlı", "Cumhuriyet"],
+    "Coğrafya": ["Harita", "İklim", "Nüfus", "Doğa", "Türkiye Coğrafyası"],
+    "Felsefe": ["Felsefenin Alanı", "Bilgi Felsefesi", "Ahlak", "Siyaset", "Sanat"],
+    "Din Kültürü": ["İslam", "Peygamberler", "Ahlak", "İbadet"]
 }
 
+# Sayfa seçimi
 secenek = st.sidebar.radio("Sayfa Seç:", ["Soru Girişi", "Analiz", "Kayıt Sil"])
 
+# ➕ Soru Girişi Sayfası
 if secenek == "Soru Girişi":
     st.header("Yeni Soru Kaydı Ekle")
 
@@ -48,46 +48,43 @@ if secenek == "Soru Girişi":
     aciklama = st.text_area("Açıklama (isteğe bağlı)")
 
     if st.button("Kaydet"):
-        if konu is Ellipsis or konu == "Ellipsis":
-            st.error("Hatalı konu verisi tespit edildi.")
+        yeni_kayit = pd.DataFrame({
+            "Tarih": [datetime.date.today()],
+            "Yıl": [yil],
+            "Soru No": [soru_no],
+            "Ders": [ders],
+            "Konu": [konu],
+            "Süre": [sure],
+            "Durum": [durum],
+            "Açıklama": [aciklama]
+        })
+
+        if os.path.exists(CSV_FILE):
+            mevcut = pd.read_csv(CSV_FILE)
+            df = pd.concat([mevcut, yeni_kayit], ignore_index=True)
         else:
-            yeni_kayit = pd.DataFrame({
-                "Tarih": [datetime.date.today()],
-                "Yıl": [yil],
-                "Soru No": [soru_no],
-                "Ders": [ders],
-                "Konu": [konu],
-                "Süre": [sure],
-                "Durum": [durum],
-                "Açıklama": [aciklama]
-            })
+            df = yeni_kayit
 
-            if os.path.exists(CSV_FILE):
-                mevcut = pd.read_csv(CSV_FILE)
-                df = pd.concat([mevcut, yeni_kayit], ignore_index=True)
-            else:
-                df = yeni_kayit
+        df.to_csv(CSV_FILE, index=False)
+        with st.spinner("Kaydediliyor..."):
+            time.sleep(0.5)
+        st.success("Kayıt başarıyla eklendi!")
 
-            df.to_csv(CSV_FILE, index=False)
-            with st.spinner("Kaydediliyor..."):
-                time.sleep(0.5)
-            st.success("Kayıt başarıyla eklendi!")
-
+# 📊 Analiz Sayfası
 elif secenek == "Analiz":
     st.header("Çözülen Soruların Analizi")
 
     if os.path.exists(CSV_FILE):
         df = pd.read_csv(CSV_FILE)
-        df = df[df["Konu"] != "Ellipsis"]  # Ellipsis kaydını dışla
 
         st.subheader("Filtreleme")
-        dersler = ["Tümü"] + sorted(df["Ders"].dropna().unique())
+        dersler = ["Tümü"] + sorted(df["Ders"].unique())
         secilen_ders = st.selectbox("Derse göre filtrele", dersler)
 
         if secilen_ders != "Tümü":
             df = df[df["Ders"] == secilen_ders]
 
-        yillar = ["Tümü"] + sorted(df["Yıl"].dropna().unique())
+        yillar = ["Tümü"] + sorted(df["Yıl"].unique())
         secilen_yil = st.selectbox("Yıla göre filtrele", yillar)
 
         if secilen_yil != "Tümü":
@@ -122,22 +119,28 @@ elif secenek == "Analiz":
         st.write(f"❌ Çözülemeyen Soruların Ortalama Süresi: **{sure_y:.2f} dk**")
 
         st.subheader("Grafik: Süre Karşılaştırması")
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(facecolor='#0e1117')
+        ax.set_facecolor('#0e1117')
         ax.bar(["Çözülen", "Çözemedim"], [sure_c, sure_y], color=["green", "red"])
-        ax.set_ylabel("Ortalama Süre (dk)")
+        ax.set_ylabel("Ortalama Süre (dk)", color="white")
+        ax.tick_params(colors='white')
+        ax.spines['bottom'].set_color('white')
+        ax.spines['left'].set_color('white')
         st.pyplot(fig)
 
         st.subheader("Çözülmeyen Sorulardan Notlar")
-        df["Açıklama"] = df["Açıklama"].astype(str)
-        aciklamalar = df[(df["Durum"] == "Çözemedim") & (df["Açıklama"].str.strip() != "")]
-        if not aciklamalar.empty:
-            for _, row in aciklamalar.iterrows():
-                st.markdown(f"📌 **{row['Ders']} - {row['Konu']}** → {row['Açıklama']}")
-        else:
-            st.info("Açıklama girilmiş çözülemeyen soru bulunamadı.")
+        if "Açıklama" in df.columns:
+            df["Açıklama"] = df["Açıklama"].astype(str)
+            aciklamalar = df[(df["Durum"] == "Çözemedim") & (df["Açıklama"].str.strip() != "")]
+            if not aciklamalar.empty:
+                for _, row in aciklamalar.iterrows():
+                    st.markdown(f"📌 **{row['Ders']} - {row['Konu']}** → {row['Açıklama']}")
+            else:
+                st.info("Açıklama girilmiş çözülemeyen soru bulunamadı.")
     else:
         st.warning("Henüz kayıt bulunmuyor.")
 
+# 🗑️ Kayıt Sil Sayfası
 elif secenek == "Kayıt Sil":
     st.header("Kayıt Silme Paneli")
 
@@ -147,10 +150,7 @@ elif secenek == "Kayıt Sil":
         if df.empty:
             st.info("Kayıt dosyası boş.")
         else:
-            df["Görüntü"] = df.apply(
-                lambda row: f"{row['Tarih']} | {row['Ders']} | {row['Konu']} | Soru {int(row['Soru No'])}",
-                axis=1
-            )
+            df["Görüntü"] = df.apply(lambda row: f"{row['Tarih']} | {row['Ders']} | {row['Konu']} | Soru {int(row['Soru No'])}", axis=1)
 
             secilen_kayit = st.selectbox("Silmek istediğin kaydı seç:", df["Görüntü"])
             secilen_index = df[df["Görüntü"] == secilen_kayit].index[0]
