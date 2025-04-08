@@ -141,17 +141,25 @@ elif secenek == "İşaretli Sorular":
     st.header("İşaretli Sorular")
     if os.path.exists(CSV_FILE):
         df = pd.read_csv(CSV_FILE)
-        if "Yıldızlı" in df.columns and True in df["Yıldızlı"].unique():
-            for ders in df["Ders"].unique():
-                alt_df = df[(df["Ders"] == ders) & (df["Yıldızlı"] == True)]
-                if not alt_df.empty:
-                    st.subheader(ders)
-                    sorular = alt_df["Soru No"].tolist()
-                    st.write(f"Yıldızlı Sorular: {', '.join(map(str, sorular))}")
+        if "İşaretli" in df.columns or "Yıldızlı" in df.columns:
+            # "Yıldızlı" olarak kaydedildiyse onu "İşaretli" olarak kabul et
+            if "Yıldızlı" in df.columns and "İşaretli" not in df.columns:
+                df.rename(columns={"Yıldızlı": "İşaretli"}, inplace=True)
+
+            if True in df["İşaretli"].unique():
+                for ders in sorted(df["Ders"].unique()):
+                    alt_df = df[(df["Ders"] == ders) & (df["İşaretli"] == True)]
+                    if not alt_df.empty:
+                        st.subheader(ders)
+                        sorular = alt_df["Soru No"].tolist()
+                        st.write(f"İşaretli Sorular: {', '.join(map(str, sorular))}")
+            else:
+                st.info("Henüz işaretli soru bulunmuyor.")
         else:
-            st.info("Yıldızlı soru yok.")
+            st.info("Verilerde 'İşaretli' bilgisi yer almıyor.")
     else:
-        st.warning("CSV dosyası bulunamadı.")
+        st.warning("Veri dosyası bulunamadı.")
+
 
 # ⚙️ KONSOL
 if secenek == "Konsol" and sifre_dogru:
