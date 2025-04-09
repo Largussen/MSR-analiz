@@ -158,7 +158,7 @@ if secenek == "İşaretli Sorular":
                         # Görseli yükleme
                         if os.path.exists(img_path):
                             img = Image.open(img_path)
-                            st.image(img, caption=f"Soru {soru_numarasi}", use_column_width=True)
+                            st.image(img, caption=f"Soru {soru_numarasi}", use_container_width=True)
                         else:
                             st.warning(f"Soru {soru_numarasi} için görsel bulunamadı.")
 
@@ -239,9 +239,10 @@ if secenek == "Konsol" and sifre_dogru:
                 secili_kayit = st.selectbox("Silmek istediğiniz kaydı seçin", df["Görüntü"])
 
                 if secili_kayit:
-                    sil_kayit = df[df["Görüntü"] == secili_kayit].index[0]
-                    df.drop(sil_kayit, axis=0, inplace=True)
-                    df.to_csv(CSV_FILE, index=False)
-                    st.success("Kayıt başarıyla silindi!")
+                    kayit = df[df["Görüntü"] == secili_kayit]
+                    if st.button("Sil"):
+                        df = df[df["Görüntü"] != secili_kayit]
+                        df.to_csv(CSV_FILE, index=False)
+                        st.success("Kayıt başarıyla silindi!")
         else:
             st.warning("Kayıt dosyası bulunamadı.")
