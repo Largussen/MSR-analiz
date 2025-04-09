@@ -45,6 +45,37 @@ konular_dict = {
     "Din Kültürü": ["İslamiyet", "İnanç", "İbadet", "Ahlak", "Din ve Hayat"]
 }
 
+# -------------------------- ANALİZ --------------------------
+if secenek == "Analiz":
+    st.header("📊 Analiz")
+    if os.path.exists(CSV_FILE):
+        df = pd.read_csv(CSV_FILE)
+        if df.empty:
+            st.info("Hiç kayıt yok.")
+        else:
+            # Ortalama süre hesaplama
+            if "Süre" in df.columns:
+                ortalama_sure = df["Süre"].mean()
+                st.metric("Ortalama Süre", f"{ortalama_sure:.2f} dk")
+
+            # Çözülen ve çözülemeyen soruları sayma
+            if "Durum" in df.columns:
+                durumlar = df["Durum"].value_counts()
+                for durum, count in durumlar.items():
+                    st.write(f"{durum}: {count} soru")
+
+            # En zor ve en kolay soruları listeleme
+            if "Zorluk" in df.columns:
+                en_zor = df[df["Zorluk"] == 4]
+                en_kolay = df[df["Zorluk"] == 0]
+                st.subheader("En Zor Sorular")
+                st.write(en_zor[["Tarih", "Ders", "Konu", "Soru No", "Zorluk"]])
+                st.subheader("En Kolay Sorular")
+                st.write(en_kolay[["Tarih", "Ders", "Konu", "Soru No", "Zorluk"]])
+
+    else:
+        st.warning("Kayıt dosyası bulunamadı.")
+
 # -------------------------- KONSOL --------------------------
 if secenek == "Konsol" and sifre_dogru:
     secim = st.radio("İşlem Seç:", ["Yeni Soru Ekle", "Kayıt Sil"])
