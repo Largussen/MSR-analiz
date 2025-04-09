@@ -83,8 +83,11 @@ if secenek == "Analiz":
             toplam_soru = len(df)
             cozulen = len(df[df["Durum"] == "Çözüldü"])
             cozememe = toplam_soru - cozulen
-            ort_sure = df_ort["Süre"].mean().round(2)
-            ort_zorluk = df["Zorluk"].mean().round(2)
+            ort_sure = round(df_ort["Süre"].mean(), 2)
+
+            ort_zorluk = round(df["Zorluk"].mean(), 2)
+
+
 
             col1, col2, col3, col4, col5 = st.columns(5)
             col1.metric("Toplam Soru", toplam_soru)
