@@ -5,6 +5,7 @@ import os
 import time
 import matplotlib.pyplot as plt
 from PIL import Image
+import base64
 
 CSV_FILE = "soru_kayitlari.csv"
 KONSOL_SIFRE = "1234"
@@ -247,35 +248,26 @@ if secenek == "Konsol" and sifre_dogru:
             else:
                 df["Görüntü"] = df.apply(lambda row: f"{row['Tarih']} | {row['Ders']} | {row['Konu']} | Soru {int(row['Soru No'])}", axis=1)
                 secili_kayit = st.selectbox("Silmek istediğiniz kaydı seçin", df["Görüntü"])
-
                 if secili_kayit:
-                    kayit = df[df["Görüntü"] == secili_kayit]
+                    kayit_id = df[df["Görüntü"] == secili_kayit].index[0]
                     if st.button("Sil"):
-                        df = df[df["Görüntü"] != secili_kayit]
+                        df = df.drop(kayit_id)
                         df.to_csv(CSV_FILE, index=False)
-                        st.success("Kayıt başarıyla silindi!")
+                        st.success("Kayıt silindi.")
         else:
             st.warning("Kayıt dosyası bulunamadı.")
 
     elif secim == "CSV Yükle":
-        st.header("📤 CSV Yükle")
-        csv_file = st.file_uploader("CSV dosyasını seçin", type=["csv"])
+        st.header("CSV Dosyası Yükle")
+        csv_file = st.file_uploader("CSV dosyasını yükleyin", type=["csv"])
         if csv_file:
-            df = pd.read_csv(csv_file)
-            if os.path.exists(CSV_FILE):
-                mevcut = pd.read_csv(CSV_FILE)
-                df = pd.concat([mevcut, df], ignore_index=True)
-            df.to_csv(CSV_FILE, index=False)
-            st.success("CSV dosyası başarıyla yüklendi!")
+            df_yukle = pd.read_csv(csv_file)
+            df_yukle.to_csv(CSV_FILE, index=False)
+            st.success("CSV başarıyla yüklendi.")
 
     elif secim == "CSV İndir":
-        st.header("📥 CSV İndir")
+        st.header("CSV İndirme")
         if os.path.exists(CSV_FILE):
-            df = pd.read_csv(CSV_FILE)
-            csv = df.to_csv(index=False)
-            b64 = base64.b64encode(csv.encode()).decode()
-            href = f'<a href="data:file/csv;base64,{b64}" download="soru_kayitlari.csv">CSV dosyasını indir</a>'
-            st.markdown(href, unsafe_allow_html=True)
+            st.download_button("CSV İndir", data=open(CSV_FILE, "rb"), file_name="soru_kayitlari.csv")
         else:
-            st.warning("Kayıt dosyası bulunamadı.")
-
+            st.warning("Henüz bir kayıt dosyası yok.")
