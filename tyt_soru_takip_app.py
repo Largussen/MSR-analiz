@@ -3,7 +3,6 @@ import pandas as pd
 import datetime
 import os
 import time
-import matplotlib.pyplot as plt
 from PIL import Image
 
 CSV_FILE = "soru_kayitlari.csv"
@@ -46,129 +45,7 @@ konular_dict = {
     "Din Kültürü": ["İslamiyet", "İnanç", "İbadet", "Ahlak", "Din ve Hayat"]
 }
 
-# -------------------------- ANALİZ SAYFASI --------------------------
-if secenek == "Analiz":
-    st.image(Image.open("kemal.png"), width=200)
-    st.header("")
-
-    if os.path.exists(CSV_FILE):
-        df = pd.read_csv(CSV_FILE)
-
-        # Veri tipi düzeltmeleri
-        df["Süre"] = pd.to_numeric(df["Süre"], errors="coerce")
-        if "OrtalamayaDahil" in df.columns:
-            df["OrtalamayaDahil"] = df["OrtalamayaDahil"].astype(bool)
-            df_ort = df[df["OrtalamayaDahil"] == True]
-        else:
-            df["OrtalamayaDahil"] = True
-            df_ort = df
-
-        if not df.empty:
-            st.subheader("Filtreleme")
-            dersler = ["Tümü"] + sorted(df["Ders"].unique())
-            secilen_ders = st.selectbox("Derse göre filtrele", dersler)
-
-            if secilen_ders != "Tümü":
-                df = df[df["Ders"] == secilen_ders]
-                df_ort = df_ort[df_ort["Ders"] == secilen_ders]
-
-            zorluklar = ["Tümü"] + sorted(df["Zorluk"].dropna().unique())
-            secilen_zorluk = st.selectbox("Zorluk seviyesine göre filtrele", zorluklar)
-
-            if secilen_zorluk != "Tümü":
-                df = df[df["Zorluk"] == int(secilen_zorluk)]
-                df_ort = df_ort[df_ort["Zorluk"] == int(secilen_zorluk)]
-
-            st.subheader("Genel Bilgiler")
-            toplam_soru = len(df)
-            cozulen = len(df[df["Durum"] == "Çözüldü"])
-            cozememe = toplam_soru - cozulen
-            ort_sure = round(df_ort["Süre"].mean(), 2)
-
-            ort_zorluk = round(df["Zorluk"].mean(), 2)
-
-            col1, col2, col3, col4, col5 = st.columns(5)
-            col1.metric("Toplam Soru", toplam_soru)
-            col2.metric("Çözülen", cozulen)
-            col3.metric("Çözülemeyen", cozememe)
-            col4.metric("Ortalama Süre", f"{ort_sure} dk")
-            col5.metric("Ortalama Zorluk", ort_zorluk)
-
-            st.subheader("Konu Bazlı Başarı")
-            konu_grup = df.groupby("Konu")["Durum"].value_counts().unstack().fillna(0)
-            konu_grup["Toplam"] = konu_grup.sum(axis=1)
-            konu_grup["Başarı %"] = (konu_grup.get("Çözüldü", 0) / konu_grup["Toplam"] * 100).round(1)
-            st.dataframe(konu_grup.sort_values("Başarı %", ascending=False))
-
-            st.subheader("Süre Analizi")
-            sure_c = df_ort[df_ort["Durum"] == "Çözüldü"]["Süre"].mean()
-            sure_y = df_ort[df_ort["Durum"] == "Çözülemeyen"]["Süre"].mean()
-            st.write(f"✅ Çözülen Ortalama Süre: **{sure_c:.2f} dk**")
-            st.write(f"❌ Çözülemeyen Ortalama Süre: **{sure_y:.2f} dk**")
-
-            fig, ax = plt.subplots(facecolor="#121212")
-            ax.bar(["Çözülen", "Çözülemeyen"], [sure_c, sure_y], color=["green", "red"])
-            ax.set_ylabel("Ortalama Süre (dk)", color="white")
-            ax.tick_params(axis='x', colors='white')
-            ax.tick_params(axis='y', colors='white')
-            for spine in ax.spines.values():
-                spine.set_color("white")
-            ax.set_facecolor("#1E1E1E")
-            fig.patch.set_facecolor("#121212")
-            st.pyplot(fig)
-
-# ------------------------ SORU NOTLARI ------------------------
-if secenek == "Soru Notları":
-    st.header("📝 Soru Notları")
-    if os.path.exists(CSV_FILE):
-        df = pd.read_csv(CSV_FILE)
-        df["Açıklama"] = df["Açıklama"].astype(str)
-        notlu = df[df["Açıklama"].str.strip() != ""]
-        if not notlu.empty:
-            dersler = ["Tümü"] + sorted(notlu["Ders"].unique())
-            sec_ders = st.selectbox("Ders Seç", dersler)
-            if sec_ders != "Tümü":
-                notlu = notlu[notlu["Ders"] == sec_ders]
-
-            konular = ["Tümü"] + sorted(notlu["Konu"].unique())
-            sec_konu = st.selectbox("Konu Seç", konular)
-            if sec_konu != "Tümü":
-                notlu = notlu[notlu["Konu"] == sec_konu]
-
-            for _, row in notlu.iterrows():
-                st.markdown(f"**{row['Ders']} - {row['Konu']} | Soru {int(row['Soru No'])}** → {row['Açıklama']}")
-        else:
-            st.info("Henüz not girilmiş soru bulunmuyor.")
-
-# ------------------------ İŞARETLİ SORULAR ------------------------
-if secenek == "İşaretli Sorular":
-    st.header("İşaretli Sorular")
-    if os.path.exists(CSV_FILE):
-        df = pd.read_csv(CSV_FILE)
-        if "Yıldızlı" in df.columns and True in df["Yıldızlı"].unique():
-            for ders in df["Ders"].unique():
-                alt_df = df[(df["Ders"] == ders) & (df["Yıldızlı"] == True)]
-                if not alt_df.empty:
-                    st.subheader(ders)
-                    for _, row in alt_df.iterrows():
-                        soru_numarasi = row["Soru No"]
-                        aciklama = row["Açıklama"]
-                        img_path = f"images/soru_{row['Yıl']}_{soru_numarasi}.png"  # Görselin yolu
-
-                        # Görseli yükleme
-                        if os.path.exists(img_path):
-                            img = Image.open(img_path)
-                            st.image(img, caption=f"Soru {soru_numarasi}", use_column_width=True)
-                        else:
-                            st.warning(f"Soru {soru_numarasi} için görsel bulunamadı.")
-
-                        st.markdown(f"**Soru {soru_numarasi}:** {aciklama}")
-        else:
-            st.info("İşaretli soru yok.")
-    else:
-        st.warning("Kayıt dosyası bulunamadı.")
-
-# ------------------------ KONSOL ------------------------
+# -------------------------- KONSOL --------------------------
 if secenek == "Konsol" and sifre_dogru:
     secim = st.radio("İşlem Seç:", ["Yeni Soru Ekle", "Kayıt Sil"])
 
@@ -192,7 +69,17 @@ if secenek == "Konsol" and sifre_dogru:
         dahil_mi = st.checkbox("Süreyi ortalamaya dahil et", value=True)
         aciklama = st.text_area("Açıklama (İsteğe Bağlı)")
 
+        # Görsel yükleme
+        uploaded_file = st.file_uploader("Görsel Yükle (İsteğe Bağlı)", type=["png", "jpg", "jpeg"])
+
         if st.button("Kaydet"):
+            # Görseli kaydetme işlemi
+            if uploaded_file is not None:
+                image_path = f"images/soru_{yil}_{soru_no}.png"
+                with open(image_path, "wb") as f:
+                    f.write(uploaded_file.getbuffer())
+
+            # Yeni kayıt oluşturma
             yeni_kayit = pd.DataFrame({
                 "Tarih": [datetime.date.today()],
                 "Yıl": [yil],
@@ -204,7 +91,8 @@ if secenek == "Konsol" and sifre_dogru:
                 "Zorluk": [zorluk],
                 "Yıldızlı": [isaretli],
                 "OrtalamayaDahil": [dahil_mi],
-                "Açıklama": [aciklama]
+                "Açıklama": [aciklama],
+                "Görsel": [image_path if uploaded_file is not None else ""]
             })
 
             if os.path.exists(CSV_FILE):
@@ -233,3 +121,31 @@ if secenek == "Konsol" and sifre_dogru:
                     st.success("Kayıt başarıyla silindi!")
         else:
             st.warning("Kayıt dosyası bulunamadı.")
+
+# ------------------------ İŞARETLİ SORULAR ------------------------
+if secenek == "İşaretli Sorular":
+    st.header("İşaretli Sorular")
+    if os.path.exists(CSV_FILE):
+        df = pd.read_csv(CSV_FILE)
+        if "Yıldızlı" in df.columns and True in df["Yıldızlı"].unique():
+            for ders in df["Ders"].unique():
+                alt_df = df[(df["Ders"] == ders) & (df["Yıldızlı"] == True)]
+                if not alt_df.empty:
+                    st.subheader(ders)
+                    for _, row in alt_df.iterrows():
+                        soru_numarasi = row["Soru No"]
+                        aciklama = row["Açıklama"]
+                        img_path = f"images/soru_{row['Yıl']}_{soru_numarasi}.png"  # Görselin yolu
+
+                        # Görseli yükleme
+                        if os.path.exists(img_path):
+                            img = Image.open(img_path)
+                            st.image(img, caption=f"Soru {soru_numarasi}", use_column_width=True)
+                        else:
+                            st.warning(f"Soru {soru_numarasi} için görsel bulunamadı.")
+
+                        st.markdown(f"**Soru {soru_numarasi}:** {aciklama}")
+        else:
+            st.info("İşaretli soru yok.")
+    else:
+        st.warning("Kayıt dosyası bulunamadı.")
