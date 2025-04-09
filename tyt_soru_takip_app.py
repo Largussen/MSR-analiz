@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import datetime
@@ -68,37 +67,33 @@ if secenek == "Analiz":
     st.header("")
 
     if os.path.exists(CSV_FILE):
-        if os.path.exists(CSV_FILE):
-            df = pd.read_csv(CSV_FILE)
-    if "OrtalamayaDahil" not in df.columns:
-        df["OrtalamayaDahil"] = True
-        df.to_csv(CSV_FILE, index=False)
-
         df = pd.read_csv(CSV_FILE)
 
         if not df.empty:
-            if "OrtalamayaDahil" not in df.columns:
-                df["OrtalamayaDahil"] = True
+            if "OrtalamayaDahil" in df.columns:
+                df_ort = df[df["OrtalamayaDahil"] == True].copy()
+            else:
+                df_ort = df.copy()
 
             st.subheader("Filtreleme")
             dersler = ["Tümü"] + sorted(df["Ders"].unique())
             secilen_ders = st.selectbox("Derse göre filtrele", dersler)
 
             if secilen_ders != "Tümü":
-                df = df[df["Ders"] == secilen_ders]
+                df_ort = df_ort[df_ort["Ders"] == secilen_ders]
 
             zorluklar = ["Tümü"] + sorted(df["Zorluk"].dropna().unique())
             secilen_zorluk = st.selectbox("Zorluk seviyesine göre filtrele", zorluklar)
 
             if secilen_zorluk != "Tümü":
-                df = df[df["Zorluk"] == int(secilen_zorluk)]
+                df_ort = df_ort[df_ort["Zorluk"] == int(secilen_zorluk)]
 
             st.subheader("Genel Bilgiler")
             toplam_soru = len(df)
             cozulen = len(df[df["Durum"] == "Çözüldü"])
             cozememe = toplam_soru - cozulen
-            ort_sure = df[df["OrtalamayaDahil"] == True]["Süre"].mean().round(2)
-            ort_zorluk = df["Zorluk"].mean().round(2)
+            ort_sure = df_ort["Süre"].mean().round(2)
+            ort_zorluk = df_ort["Zorluk"].mean().round(2)
 
             col1, col2, col3, col4, col5 = st.columns(5)
             col1.metric("Toplam Soru", toplam_soru)
@@ -114,12 +109,23 @@ if secenek == "Analiz":
             st.dataframe(konu_grup.sort_values("Başarı %", ascending=False))
 
             st.subheader("Süre Analizi")
-            sure_c = df[(df["Durum"] == "Çözüldü") & (df["OrtalamayaDahil"] == True)]["Süre"].mean()
-            sure_y = df[(df["Durum"] == "Çözülemeyen") & (df["OrtalamayaDahil"] == True)]["Süre"].mean()
+            sure_c = df[df["Durum"] == "Çözüldü"]["Süre"].mean()
+            sure_y = df[df["Durum"] == "Çözülemeyen"]["Süre"].mean()
             st.write(f"✅ Çözülen Ortalama Süre: **{sure_c:.2f} dk**")
             st.write(f"❌ Çözülemeyen Ortalama Süre: **{sure_y:.2f} dk**")
 
-# 🛠 KONSOL SAYFASI
+            fig, ax = plt.subplots(facecolor="#121212")
+            ax.bar(["Çözülen", "Çözülemeyen"], [sure_c, sure_y], color=["green", "red"])
+            ax.set_ylabel("Ortalama Süre (dk)", color="white")
+            ax.tick_params(axis='x', colors='white')
+            ax.tick_params(axis='y', colors='white')
+            for spine in ax.spines.values():
+                spine.set_color("white")
+            ax.set_facecolor("#1E1E1E")
+            fig.patch.set_facecolor("#121212")
+            st.pyplot(fig)
+
+# 🔒 Konsol sayfasına ekle: Soru eklerken yeni seçenek
 if secenek == "Konsol" and sifre_dogru:
     secim = st.radio("İşlem Seç:", ["Yeni Soru Ekle", "Kayıt Sil"])
 
@@ -137,10 +143,10 @@ if secenek == "Konsol" and sifre_dogru:
             sn = st.number_input("Süre (Saniye)", min_value=0, max_value=59, step=1)
             sure = round(dak + sn / 60, 2)
 
-        dahil_et = not st.checkbox("Bu süreyi ortalamaya dahil etme")
         durum = st.radio("Durum", ["Çözüldü", "Çözülemeyen"])
         zorluk = st.slider("Zorluk Seviyesi", 0, 4, 2)
         isaretli = st.checkbox("Soruyu işaretle")
+        ortalamaya_dahil = st.checkbox("Süreyi ortalamaya dahil et", value=True)
         aciklama = st.text_area("Açıklama (İsteğe Bağlı)")
 
         if st.button("Kaydet"):
@@ -154,8 +160,8 @@ if secenek == "Konsol" and sifre_dogru:
                 "Durum": [durum],
                 "Zorluk": [zorluk],
                 "Yıldızlı": [isaretli],
-                "Açıklama": [aciklama],
-                "OrtalamayaDahil": [dahil_et]
+                "OrtalamayaDahil": [ortalamaya_dahil],
+                "Açıklama": [aciklama]
             })
 
             if os.path.exists(CSV_FILE):
