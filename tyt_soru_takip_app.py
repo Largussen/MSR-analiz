@@ -8,7 +8,7 @@ from PIL import Image
 import base64
 
 CSV_FILE = "soru_kayitlari.csv"
-KONSOL_SIFRE = "1234"
+KONSOL_SIFRE = "kemal"
 
 st.set_page_config(page_title="TYT Soru Takip", layout="wide")
 
