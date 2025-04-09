@@ -47,7 +47,7 @@ konular_dict = {
     "Din Kültürü": ["İslamiyet", "İnanç", "İbadet", "Ahlak", "Din ve Hayat"]
 }
 
-# -------------------------- ANALİZ SAYFASI --------------------------
+
 if secenek == "Analiz":
     st.image(Image.open("kemal.png"), width=200)
     st.header("")
@@ -55,7 +55,7 @@ if secenek == "Analiz":
     if os.path.exists(CSV_FILE):
         df = pd.read_csv(CSV_FILE)
 
-        # Veri tipi düzeltmeleri
+        
         df["Süre"] = pd.to_numeric(df["Süre"], errors="coerce")
         if "OrtalamayaDahil" in df.columns:
             df["OrtalamayaDahil"] = df["OrtalamayaDahil"].astype(bool)
@@ -119,7 +119,7 @@ if secenek == "Analiz":
             st.pyplot(fig)
 
 
-# ------------------------ İŞARETLİ SORULAR ------------------------
+
 if secenek == "İşaretli Sorular":
     st.header("İşaretli Sorular")
     if os.path.exists(CSV_FILE):
