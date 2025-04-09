@@ -22,7 +22,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-menu = ["Analiz", "Soru Notları", "İşaretli Sorular", "Konsol"]
+menu = ["Analiz", "İşaretli Sorular", "Konsol"]
 secenek = st.sidebar.radio("Menü:", menu)
 
 sifre_dogru = False
