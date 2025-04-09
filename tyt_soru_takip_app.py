@@ -142,7 +142,7 @@ if secenek == "İşaretli Sorular":
             for _, row in df_isaretli.iterrows():
                 soru_numarasi = row["Soru No"]
                 aciklama = row["Açıklama"]
-                img_path = f"images/soru_{row['Yıl']}_{soru_numarasi}.png"  # Görselin yolu
+                img_path = f"images/soru_{row['Yıl']}_{soru_numarasi}.png"  
 
                 # Görseli yükleme
                 if os.path.exists(img_path):
@@ -157,7 +157,7 @@ if secenek == "İşaretli Sorular":
     else:
         st.warning("Kayıt dosyası bulunamadı.")
 
-# ------------------------ KONSOL ------------------------
+
 if secenek == "Konsol" and sifre_dogru:
     secim = st.radio("İşlem Seç:", ["Yeni Soru Ekle", "Kayıt Sil", "CSV Yükle", "CSV İndir"])
 
@@ -181,7 +181,7 @@ if secenek == "Konsol" and sifre_dogru:
         dahil_mi = st.checkbox("Süreyi ortalamaya dahil et", value=True)
         aciklama = st.text_area("Açıklama (İsteğe Bağlı)")
 
-        # Görsel eklemek için
+        
         img_file = st.file_uploader("Görsel yükle", type=["png", "jpg", "jpeg"])
 
         if st.button("Kaydet"):
@@ -207,7 +207,7 @@ if secenek == "Konsol" and sifre_dogru:
 
             df.to_csv(CSV_FILE, index=False)
 
-            # Görseli kaydetme işlemi
+            
             if img_file:
                 img_path = f"images/soru_{yil}_{soru_no}.png"
                 if not os.path.exists("images"):
@@ -218,7 +218,7 @@ if secenek == "Konsol" and sifre_dogru:
             st.success("Kayıt başarıyla eklendi!")
 
     elif secim == "Kayıt Sil":
-        st.header("🗑️ Kayıt Sil")
+        st.header("Kayıt Sil")
         if os.path.exists(CSV_FILE):
             df = pd.read_csv(CSV_FILE)
             if df.empty:
