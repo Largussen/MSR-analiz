@@ -145,24 +145,34 @@ if secenek == "İşaretli Sorular":
     st.header("İşaretli Sorular")
     if os.path.exists(CSV_FILE):
         df = pd.read_csv(CSV_FILE)
-        if "Yıldızlı" in df.columns and True in df["Yıldızlı"].unique():
-            for ders in df["Ders"].unique():
-                alt_df = df[(df["Ders"] == ders) & (df["Yıldızlı"] == True)]
-                if not alt_df.empty:
-                    st.subheader(ders)
-                    for _, row in alt_df.iterrows():
-                        soru_numarasi = row["Soru No"]
-                        aciklama = row["Açıklama"]
-                        img_path = f"images/soru_{row['Yıl']}_{soru_numarasi}.png"  # Görselin yolu
+        df_isaretli = df[df["Yıldızlı"] == True]
 
-                        # Görseli yükleme
-                        if os.path.exists(img_path):
-                            img = Image.open(img_path)
-                            st.image(img, caption=f"Soru {soru_numarasi}", use_container_width=True)
-                        else:
-                            st.warning(f"Soru {soru_numarasi} için görsel bulunamadı.")
+        if not df_isaretli.empty:
+            dersler = ["Tümü"] + sorted(df_isaretli["Ders"].unique())
+            secilen_ders = st.selectbox("Derse göre filtrele", dersler)
 
-                        st.markdown(f"**Soru {soru_numarasi}:** {aciklama}")
+            if secilen_ders != "Tümü":
+                df_isaretli = df_isaretli[df_isaretli["Ders"] == secilen_ders]
+
+            konular = ["Tümü"] + sorted(df_isaretli["Konu"].unique())
+            secilen_konu = st.selectbox("Konuya göre filtrele", konular)
+
+            if secilen_konu != "Tümü":
+                df_isaretli = df_isaretli[df_isaretli["Konu"] == secilen_konu]
+
+            for _, row in df_isaretli.iterrows():
+                soru_numarasi = row["Soru No"]
+                aciklama = row["Açıklama"]
+                img_path = f"images/soru_{row['Yıl']}_{soru_numarasi}.png"  # Görselin yolu
+
+                # Görseli yükleme
+                if os.path.exists(img_path):
+                    img = Image.open(img_path)
+                    st.image(img, caption=f"Soru {soru_numarasi}", use_container_width=True)
+                else:
+                    st.warning(f"Soru {soru_numarasi} için görsel bulunamadı.")
+
+                st.markdown(f"**Soru {soru_numarasi}:** {aciklama}")
         else:
             st.info("İşaretli soru yok.")
     else:
