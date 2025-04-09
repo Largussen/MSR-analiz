@@ -68,6 +68,12 @@ if secenek == "Analiz":
     st.header("")
 
     if os.path.exists(CSV_FILE):
+        if os.path.exists(CSV_FILE):
+            df = pd.read_csv(CSV_FILE)
+    if "OrtalamayaDahil" not in df.columns:
+        df["OrtalamayaDahil"] = True
+        df.to_csv(CSV_FILE, index=False)
+
         df = pd.read_csv(CSV_FILE)
 
         if not df.empty:
