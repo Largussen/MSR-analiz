@@ -87,8 +87,6 @@ if secenek == "Analiz":
 
             ort_zorluk = round(df["Zorluk"].mean(), 2)
 
-
-
             col1, col2, col3, col4, col5 = st.columns(5)
             col1.metric("Toplam Soru", toplam_soru)
             col2.metric("Çözülen", cozulen)
@@ -152,8 +150,19 @@ if secenek == "İşaretli Sorular":
                 alt_df = df[(df["Ders"] == ders) & (df["Yıldızlı"] == True)]
                 if not alt_df.empty:
                     st.subheader(ders)
-                    sorular = alt_df["Soru No"].tolist()
-                    st.write(f"İşaretli Sorular: {', '.join(map(str, sorular))}")
+                    for _, row in alt_df.iterrows():
+                        soru_numarasi = row["Soru No"]
+                        aciklama = row["Açıklama"]
+                        img_path = f"images/soru_{row['Yıl']}_{soru_numarasi}.png"  # Görselin yolu
+
+                        # Görseli yükleme
+                        if os.path.exists(img_path):
+                            img = Image.open(img_path)
+                            st.image(img, caption=f"Soru {soru_numarasi}", use_column_width=True)
+                        else:
+                            st.warning(f"Soru {soru_numarasi} için görsel bulunamadı.")
+
+                        st.markdown(f"**Soru {soru_numarasi}:** {aciklama}")
         else:
             st.info("İşaretli soru yok.")
     else:
@@ -215,14 +224,12 @@ if secenek == "Konsol" and sifre_dogru:
                 st.info("Hiç kayıt yok.")
             else:
                 df["Görüntü"] = df.apply(lambda row: f"{row['Tarih']} | {row['Ders']} | {row['Konu']} | Soru {int(row['Soru No'])}", axis=1)
-                secilen = st.selectbox("Silinecek kayıt:", df["Görüntü"])
-                index = df[df["Görüntü"] == secilen].index[0]
+                secili_kayit = st.selectbox("Silmek istediğiniz kaydı seçin", df["Görüntü"])
 
-                if st.button("Sil"):
-                    df = df.drop(index)
+                if secili_kayit:
+                    sil_kayit = df[df["Görüntü"] == secili_kayit].index[0]
+                    df.drop(sil_kayit, axis=0, inplace=True)
                     df.to_csv(CSV_FILE, index=False)
-                    st.success("Kayıt silindi!")
-                    time.sleep(1)
-                    st.rerun()
+                    st.success("Kayıt başarıyla silindi!")
         else:
-            st.warning("CSV dosyası bulunamadı.")
+            st.warning("Kayıt dosyası bulunamadı.")
