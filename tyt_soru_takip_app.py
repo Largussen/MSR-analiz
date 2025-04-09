@@ -144,7 +144,7 @@ if secenek == "Soru Notları":
 
 # ------------------------ İŞARETLİ SORULAR ------------------------
 if secenek == "İşaretli Sorular":
-    st.header("⭐️ İşaretli Sorular")
+    st.header("İşaretli Sorular")
     if os.path.exists(CSV_FILE):
         df = pd.read_csv(CSV_FILE)
         if "Yıldızlı" in df.columns and True in df["Yıldızlı"].unique():
