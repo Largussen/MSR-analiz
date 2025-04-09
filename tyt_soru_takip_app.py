@@ -1,140 +1,162 @@
 
 import streamlit as st
 import pandas as pd
-import os
 import datetime
+import os
+import time
+import matplotlib.pyplot as plt
+from PIL import Image
 
-CSV_FILE = "veriler.csv"
+# Ayarlar
+CSV_FILE = "soru_kayitlari.csv"
+KONSOL_SIFRE = "1234"
 
+# Sayfa yapısı ve tema
 st.set_page_config(page_title="TYT Soru Takip", layout="wide")
+st.markdown("""
+    <style>
+    body {
+        background-color: #121212;
+        color: white;
+    }
+    .stDataFrame tbody td {
+        color: white !important;
+    }
+    .stDataFrame thead th {
+        color: white !important;
+    }
+    div[data-testid="stMetricValue"] {
+        color: white;
+    }
+    button:hover {
+        transform: scale(1.03);
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-st.markdown(
-    "<h1 style='text-align: center; color: white;'>TYT Soru Takip ve Analiz</h1>",
-    unsafe_allow_html=True
-)
+# Menü
+menu = ["Analiz", "Soru Notları", "İşaretli Sorular", "Konsol"]
+secenek = st.sidebar.radio("Menü:", menu)
 
-menu = ["Analiz", "Soru Ekle", "Kayıt Sil", "Soru Notları", "İşaretli Sorular"]
-secenek = st.sidebar.selectbox("Menü", menu)
+# Şifre kontrolü
+sifre_dogru = False
+if secenek == "Konsol":
+    girilen = st.text_input("Konsol Girişi - Şifre:", type="password")
+    if girilen == KONSOL_SIFRE:
+        sifre_dogru = True
+    else:
+        st.warning("Konsola erişmek için doğru şifreyi girin.")
 
-if secenek == "Soru Ekle":
-    st.header("Yeni Soru Kaydı")
-    col1, col2 = st.columns(2)
-    with col1:
-        ders = st.selectbox("Ders", ["Türkçe", "Matematik", "Fen", "Sosyal"])
-        konu = st.text_input("Konu")
-        dogru = st.checkbox("Doğru")
-        sure_dahil = st.checkbox("Süreyi ortalamaya dahil et", value=True)
-    with col2:
-        soru_no = st.number_input("Soru No", min_value=1, step=1)
-        dakika = st.number_input("Dakika", min_value=0, step=1)
-        saniye = st.number_input("Saniye", min_value=0, max_value=59, step=1)
-        zorlanma = st.slider("Zorluk (0: Çok Kolay - 4: Çok Zor)", 0, 4, 2)
+# Konular
+konular_dict = {
+    "Matematik": ["Temel Kavramlar", "Sayılar", "Bölme-Bölünebilme", "OBEB-OKEK", "Rasyonel Sayılar", "Ondalık Sayılar",
+                  "Basamak Kavramı", "Faktöriyel", "Asal Çarpan", "Modüler Aritmetik", "EBOB-EKOK", "Çarpanlara Ayırma",
+                  "Denklem Çözme", "Problemler", "Kümeler", "Fonksiyonlar", "Polinomlar", "Logaritma"],
+    "Türkçe": ["Sözcükte Anlam", "Cümlede Anlam", "Paragraf", "Ses Bilgisi", "Yazım Kuralları", "Noktalama", "Dil Bilgisi"],
+    "Fizik": ["Kuvvet", "Hareket", "Isı", "Optik", "Elektrik", "Manyetizma"],
+    "Kimya": ["Atom", "Periyodik Sistem", "Bileşikler", "Kimyasal Tepkimeler", "Mol Hesapları", "Çözeltiler"],
+    "Biyoloji": ["Hücre", "Canlıların Sınıflandırılması", "Solunum", "Üreme", "Genetik", "Ekoloji"],
+    "Tarih": ["İlk Çağ", "Orta Çağ", "Osmanlı", "Kurtuluş Savaşı", "Cumhuriyet Dönemi"],
+    "Coğrafya": ["İklim", "Harita Bilgisi", "Türkiye’nin Yer Şekilleri", "Nüfus", "Ekonomi"],
+    "Felsefe": ["Felsefenin Alanı", "Bilgi Felsefesi", "Ahlak Felsefesi", "Sanat", "Din Felsefesi"],
+    "Din Kültürü": ["İslamiyet", "İnanç", "İbadet", "Ahlak", "Din ve Hayat"]
+}
+
+# 📊 ANALİZ SAYFASI
+if secenek == "Analiz":
+    st.image(Image.open("kemal.png"), width=200)
+    st.header("")
+
+    if os.path.exists(CSV_FILE):
+        df = pd.read_csv(CSV_FILE)
+
+        if not df.empty:
+            if "OrtalamayaDahil" not in df.columns:
+                df["OrtalamayaDahil"] = True
+
+            st.subheader("Filtreleme")
+            dersler = ["Tümü"] + sorted(df["Ders"].unique())
+            secilen_ders = st.selectbox("Derse göre filtrele", dersler)
+
+            if secilen_ders != "Tümü":
+                df = df[df["Ders"] == secilen_ders]
+
+            zorluklar = ["Tümü"] + sorted(df["Zorluk"].dropna().unique())
+            secilen_zorluk = st.selectbox("Zorluk seviyesine göre filtrele", zorluklar)
+
+            if secilen_zorluk != "Tümü":
+                df = df[df["Zorluk"] == int(secilen_zorluk)]
+
+            st.subheader("Genel Bilgiler")
+            toplam_soru = len(df)
+            cozulen = len(df[df["Durum"] == "Çözüldü"])
+            cozememe = toplam_soru - cozulen
+            ort_sure = df[df["OrtalamayaDahil"] == True]["Süre"].mean().round(2)
+            ort_zorluk = df["Zorluk"].mean().round(2)
+
+            col1, col2, col3, col4, col5 = st.columns(5)
+            col1.metric("Toplam Soru", toplam_soru)
+            col2.metric("Çözülen", cozulen)
+            col3.metric("Çözülemeyen", cozememe)
+            col4.metric("Ortalama Süre", f"{ort_sure} dk")
+            col5.metric("Ortalama Zorluk", ort_zorluk)
+
+            st.subheader("Konu Bazlı Başarı")
+            konu_grup = df.groupby("Konu")["Durum"].value_counts().unstack().fillna(0)
+            konu_grup["Toplam"] = konu_grup.sum(axis=1)
+            konu_grup["Başarı %"] = (konu_grup.get("Çözüldü", 0) / konu_grup["Toplam"] * 100).round(1)
+            st.dataframe(konu_grup.sort_values("Başarı %", ascending=False))
+
+            st.subheader("Süre Analizi")
+            sure_c = df[(df["Durum"] == "Çözüldü") & (df["OrtalamayaDahil"] == True)]["Süre"].mean()
+            sure_y = df[(df["Durum"] == "Çözülemeyen") & (df["OrtalamayaDahil"] == True)]["Süre"].mean()
+            st.write(f"✅ Çözülen Ortalama Süre: **{sure_c:.2f} dk**")
+            st.write(f"❌ Çözülemeyen Ortalama Süre: **{sure_y:.2f} dk**")
+
+# 🛠 KONSOL SAYFASI
+if secenek == "Konsol" and sifre_dogru:
+    secim = st.radio("İşlem Seç:", ["Yeni Soru Ekle", "Kayıt Sil"])
+
+    if secim == "Yeni Soru Ekle":
+        st.header("➕ Yeni Soru Kaydı")
+        ders = st.selectbox("Ders", list(konular_dict.keys()))
+        konu = st.selectbox("Konu", konular_dict[ders])
+
+        col1, col2 = st.columns(2)
+        with col1:
+            yil = st.selectbox("Yıl / Kaynak", ["2024", "2023", "2022", "2021", "2020"])
+            soru_no = st.number_input("Soru No", min_value=1, step=1)
+        with col2:
+            dak = st.number_input("Süre (Dakika)", min_value=0, step=1)
+            sn = st.number_input("Süre (Saniye)", min_value=0, max_value=59, step=1)
+            sure = round(dak + sn / 60, 2)
+
+        dahil_et = not st.checkbox("Bu süreyi ortalamaya dahil etme")
+        durum = st.radio("Durum", ["Çözüldü", "Çözülemeyen"])
+        zorluk = st.slider("Zorluk Seviyesi", 0, 4, 2)
         isaretli = st.checkbox("Soruyu işaretle")
-    aciklama = st.text_area("Açıklama (varsa)")
-    soru_notu = st.text_area("Soru Notu (varsa)")
+        aciklama = st.text_area("Açıklama (İsteğe Bağlı)")
 
-    if st.button("Kaydet"):
-        toplam_sure = dakika * 60 + saniye
-        yeni_veri = pd.DataFrame([{
-            "Tarih": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "Ders": ders,
-            "Konu": konu,
-            "Soru No": soru_no,
-            "Doğru": dogru,
-            "Süre": toplam_sure,
-            "Zorluk": zorlanma,
-            "İşaretli": isaretli,
-            "Açıklama": aciklama,
-            "Soru Notu": soru_notu,
-            "Süre Dahil": sure_dahil
-        }])
-        if os.path.exists(CSV_FILE):
-            df = pd.read_csv(CSV_FILE)
-            df = pd.concat([df, yeni_veri], ignore_index=True)
-        else:
-            df = yeni_veri
-        df.to_csv(CSV_FILE, index=False)
-        st.success("Kayıt başarıyla eklendi.")
+        if st.button("Kaydet"):
+            yeni_kayit = pd.DataFrame({
+                "Tarih": [datetime.date.today()],
+                "Yıl": [yil],
+                "Soru No": [soru_no],
+                "Ders": [ders],
+                "Konu": [konu],
+                "Süre": [sure],
+                "Durum": [durum],
+                "Zorluk": [zorluk],
+                "Yıldızlı": [isaretli],
+                "Açıklama": [aciklama],
+                "OrtalamayaDahil": [dahil_et]
+            })
 
-elif secenek == "Analiz":
-    st.header("Analiz Ekranı")
-    if os.path.exists(CSV_FILE):
-        df = pd.read_csv(CSV_FILE)
-        filtre_ders = st.multiselect("Ders Seç", df["Ders"].unique())
-        filtre_konu = st.multiselect("Konu Seç", df["Konu"].unique())
-        filtre_zorluk = st.multiselect("Zorluk Seç (0-4)", sorted(df["Zorluk"].unique()))
+            if os.path.exists(CSV_FILE):
+                mevcut = pd.read_csv(CSV_FILE)
+                df = pd.concat([mevcut, yeni_kayit], ignore_index=True)
+            else:
+                df = yeni_kayit
 
-        if filtre_ders:
-            df = df[df["Ders"].isin(filtre_ders)]
-        if filtre_konu:
-            df = df[df["Konu"].isin(filtre_konu)]
-        if filtre_zorluk:
-            df = df[df["Zorluk"].isin(filtre_zorluk)]
-
-        toplam_soru = len(df)
-        dogru_sayi = df["Doğru"].sum()
-        if "Süre Dahil" in df.columns:
-            ort_sure = df[df["Süre Dahil"] == True]["Süre"].mean()
-        else:
-            ort_sure = df["Süre"].mean()
-        ort_zorluk = df["Zorluk"].mean()
-
-        st.metric("Toplam Soru", toplam_soru)
-        st.metric("Doğru Sayısı", int(dogru_sayi))
-        st.metric("Ortalama Süre (sn)", f"{ort_sure:.2f}")
-        st.metric("Ortalama Zorluk", f"{ort_zorluk:.2f}")
-
-        st.dataframe(df)
-    else:
-        st.warning("Henüz veri eklenmemiş.")
-
-elif secenek == "Kayıt Sil":
-    st.header("Kayıt Silme")
-    if os.path.exists(CSV_FILE):
-        df = pd.read_csv(CSV_FILE)
-        st.dataframe(df.tail(10))
-        sil_id = st.number_input("Silinecek Sıra No", min_value=0, max_value=len(df)-1, step=1)
-        if st.button("Sil"):
-            df = df.drop(index=sil_id).reset_index(drop=True)
             df.to_csv(CSV_FILE, index=False)
-            st.success("Kayıt silindi.")
-    else:
-        st.warning("Veri dosyası bulunamadı.")
-
-elif secenek == "Soru Notları":
-    st.header("Soru Notları")
-    if os.path.exists(CSV_FILE):
-        df = pd.read_csv(CSV_FILE)
-        df = df[df["Soru Notu"].notna() & (df["Soru Notu"] != "")]
-        filtre_ders = st.multiselect("Ders Filtrele", df["Ders"].unique())
-        filtre_konu = st.multiselect("Konu Filtrele", df["Konu"].unique())
-
-        if filtre_ders:
-            df = df[df["Ders"].isin(filtre_ders)]
-        if filtre_konu:
-            df = df[df["Konu"].isin(filtre_konu)]
-
-        for ders in df["Ders"].unique():
-            ders_df = df[df["Ders"] == ders]
-            st.subheader(f"📘 {ders}")
-            for konu in ders_df["Konu"].unique():
-                konu_df = ders_df[ders_df["Konu"] == konu]
-                st.markdown(f"**🔹 {konu}**")
-                for _, row in konu_df.iterrows():
-                    st.markdown(f"- Soru {int(row['Soru No'])}: {row['Soru Notu']}")
-    else:
-        st.warning("Henüz not alınmış soru bulunamadı.")
-
-elif secenek == "İşaretli Sorular":
-    st.header("İşaretli Sorular")
-    if os.path.exists(CSV_FILE):
-        df = pd.read_csv(CSV_FILE)
-        if "İşaretli" in df.columns and True in df["İşaretli"].unique():
-            for ders in df["Ders"].unique():
-                alt_df = df[(df["Ders"] == ders) & (df["İşaretli"] == True)]
-                if not alt_df.empty:
-                    st.subheader(ders)
-                    sorular = alt_df["Soru No"].tolist()
-                    st.write(f"İşaretli Sorular: {', '.join(map(str, sorular))}")
-    else:
-        st.warning("Veri dosyası bulunamadı.")
+            st.success("Kayıt başarıyla eklendi!")
