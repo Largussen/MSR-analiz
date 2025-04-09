@@ -180,7 +180,7 @@ if secenek == "İşaretli Sorular":
 
 # ------------------------ KONSOL ------------------------
 if secenek == "Konsol" and sifre_dogru:
-    secim = st.radio("İşlem Seç:", ["Yeni Soru Ekle", "Kayıt Sil"])
+    secim = st.radio("İşlem Seç:", ["Yeni Soru Ekle", "Kayıt Sil", "CSV Yükle", "CSV İndir"])
 
     if secim == "Yeni Soru Ekle":
         st.header("➕ Yeni Soru Kaydı")
@@ -201,10 +201,10 @@ if secenek == "Konsol" and sifre_dogru:
         isaretli = st.checkbox("Soruyu işaretle")
         dahil_mi = st.checkbox("Süreyi ortalamaya dahil et", value=True)
         aciklama = st.text_area("Açıklama (İsteğe Bağlı)")
-        
+
         # Görsel eklemek için
         img_file = st.file_uploader("Görsel yükle", type=["png", "jpg", "jpeg"])
-        
+
         if st.button("Kaydet"):
             yeni_kayit = pd.DataFrame({
                 "Tarih": [datetime.date.today()],
@@ -235,7 +235,7 @@ if secenek == "Konsol" and sifre_dogru:
                     os.makedirs("images")
                 with open(img_path, "wb") as f:
                     f.write(img_file.getbuffer())
-            
+
             st.success("Kayıt başarıyla eklendi!")
 
     elif secim == "Kayıt Sil":
@@ -256,3 +256,26 @@ if secenek == "Konsol" and sifre_dogru:
                         st.success("Kayıt başarıyla silindi!")
         else:
             st.warning("Kayıt dosyası bulunamadı.")
+
+    elif secim == "CSV Yükle":
+        st.header("📤 CSV Yükle")
+        csv_file = st.file_uploader("CSV dosyasını seçin", type=["csv"])
+        if csv_file:
+            df = pd.read_csv(csv_file)
+            if os.path.exists(CSV_FILE):
+                mevcut = pd.read_csv(CSV_FILE)
+                df = pd.concat([mevcut, df], ignore_index=True)
+            df.to_csv(CSV_FILE, index=False)
+            st.success("CSV dosyası başarıyla yüklendi!")
+
+    elif secim == "CSV İndir":
+        st.header("📥 CSV İndir")
+        if os.path.exists(CSV_FILE):
+            df = pd.read_csv(CSV_FILE)
+            csv = df.to_csv(index=False)
+            b64 = base64.b64encode(csv.encode()).decode()
+            href = f'<a href="data:file/csv;base64,{b64}" download="soru_kayitlari.csv">CSV dosyasını indir</a>'
+            st.markdown(href, unsafe_allow_html=True)
+        else:
+            st.warning("Kayıt dosyası bulunamadı.")
+
