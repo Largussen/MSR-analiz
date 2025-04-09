@@ -118,28 +118,6 @@ if secenek == "Analiz":
             fig.patch.set_facecolor("#121212")
             st.pyplot(fig)
 
-# ------------------------ SORU NOTLARI ------------------------
-if secenek == "Soru Notları":
-    st.header("📝 Soru Notları")
-    if os.path.exists(CSV_FILE):
-        df = pd.read_csv(CSV_FILE)
-        df["Açıklama"] = df["Açıklama"].astype(str)
-        notlu = df[df["Açıklama"].str.strip() != ""]
-        if not notlu.empty:
-            dersler = ["Tümü"] + sorted(notlu["Ders"].unique())
-            sec_ders = st.selectbox("Ders Seç", dersler)
-            if sec_ders != "Tümü":
-                notlu = notlu[notlu["Ders"] == sec_ders]
-
-            konular = ["Tümü"] + sorted(notlu["Konu"].unique())
-            sec_konu = st.selectbox("Konu Seç", konular)
-            if sec_konu != "Tümü":
-                notlu = notlu[notlu["Konu"] == sec_konu]
-
-            for _, row in notlu.iterrows():
-                st.markdown(f"**{row['Ders']} - {row['Konu']} | Soru {int(row['Soru No'])}** → {row['Açıklama']}")
-        else:
-            st.info("Henüz not girilmiş soru bulunmuyor.")
 
 # ------------------------ İŞARETLİ SORULAR ------------------------
 if secenek == "İşaretli Sorular":
