@@ -189,7 +189,7 @@ if secenek == "Konsol" and sifre_dogru:
 
         col1, col2 = st.columns(2)
         with col1:
-            yil = st.selectbox("Yıl / Kaynak", ["2024", "2023", "2022", "2021", "2020"])
+            yil = st.selectbox("Yıl / Kaynak", ["2024", "2023", "2022", "2021", "2020", "2019", "2018"])  # Güncelleme yapıldı
             soru_no = st.number_input("Soru No", min_value=1, step=1)
         with col2:
             dak = st.number_input("Süre (Dakika)", min_value=0, step=1)
