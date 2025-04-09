@@ -191,7 +191,10 @@ if secenek == "Konsol" and sifre_dogru:
         isaretli = st.checkbox("Soruyu işaretle")
         dahil_mi = st.checkbox("Süreyi ortalamaya dahil et", value=True)
         aciklama = st.text_area("Açıklama (İsteğe Bağlı)")
-
+        
+        # Görsel eklemek için
+        img_file = st.file_uploader("Görsel yükle", type=["png", "jpg", "jpeg"])
+        
         if st.button("Kaydet"):
             yeni_kayit = pd.DataFrame({
                 "Tarih": [datetime.date.today()],
@@ -214,6 +217,15 @@ if secenek == "Konsol" and sifre_dogru:
                 df = yeni_kayit
 
             df.to_csv(CSV_FILE, index=False)
+
+            # Görseli kaydetme işlemi
+            if img_file:
+                img_path = f"images/soru_{yil}_{soru_no}.png"
+                if not os.path.exists("images"):
+                    os.makedirs("images")
+                with open(img_path, "wb") as f:
+                    f.write(img_file.getbuffer())
+            
             st.success("Kayıt başarıyla eklendi!")
 
     elif secim == "Kayıt Sil":
